@@ -1,0 +1,133 @@
+// GUDARA Production & Sewing Tracker - Prisma Schema
+// Dev DB: SQLite. For production, switch provider to "postgresql"
+// and set DATABASE_URL to your Postgres connection string.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite" // Cloudflare D1 is SQLite-compatible, accessed via @prisma/adapter-d1
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no native enum type in Prisma, so role/status fields are
+// stored as String and constrained at the app layer (src/lib/validators.ts).
+// If you switch to PostgreSQL, you can convert these fields to real enums.
+// UserRole:       "admin_produksi" | "admin_jahit"
+// OperatorStatus: "aktif" | "non-aktif"
+// POStatus:       "berjalan" | "selesai"
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  role          String
+  nama_lengkap  String
+  createdAt     DateTime @default(now())
+
+  purchaseOrders PurchaseOrder[] @relation("POCreatedBy")
+  setoranEntries SetoranJahit[]  @relation("SetoranAdminJahit")
+
+  @@map("users")
+}
+
+model Artikel {
+  id           Int      @id @default(autoincrement())
+  kode_artikel String?  @unique
+  nama_artikel String   @unique
+  harga_satuan Decimal
+  status       String   @default("aktif")
+  createdAt    DateTime @default(now())
+
+  poItems PurchaseOrderArticle[]
+
+  @@map("artikels")
+}
+
+model Operator {
+  id               Int      @id @default(autoincrement())
+  barcode_operator String   @unique
+  nama_operator    String
+  status           String   @default("aktif")
+  createdAt        DateTime @default(now())
+
+  setoranEntries SetoranJahit[]
+
+  @@map("operators")
+}
+
+model PurchaseOrder {
+  id           Int      @id @default(autoincrement())
+  nomor_po     String   @unique
+  barcode_po   String   @unique
+  nama_po      String
+  nama_artikel String
+  harga_satuan Decimal
+  target_qty   Int?
+  status       String   @default("berjalan")
+  label        String?
+  due_date     DateTime?
+  description  String?
+  created_by   Int
+  createdAt    DateTime @default(now())
+
+  creator        User           @relation("POCreatedBy", fields: [created_by], references: [id])
+  setoranEntries SetoranJahit[]
+  articles       PurchaseOrderArticle[]
+  attachments    PurchaseOrderAttachment[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderArticle {
+  id           Int      @id @default(autoincrement())
+  po_id        Int
+  artikel_id   Int?
+  nama_artikel String
+  harga_satuan Decimal
+  qty          Int?
+  createdAt    DateTime @default(now())
+
+  po      PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
+  artikel Artikel?      @relation(fields: [artikel_id], references: [id])
+
+  @@map("purchase_order_articles")
+  @@index([po_id])
+  @@index([artikel_id])
+}
+
+model PurchaseOrderAttachment {
+  id        Int      @id @default(autoincrement())
+  po_id     Int
+  file_name String
+  file_url  String
+  is_cover  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  po PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_attachments")
+  @@index([po_id])
+}
+
+model SetoranJahit {
+  id                    Int      @id @default(autoincrement())
+  tanggal_setoran       DateTime @default(now())
+  operator_id           Int
+  po_id                 Int
+  qty_disetor           Int
+  harga_satuan_snapshot Decimal
+  total_upah            Decimal
+  admin_jahit_id        Int
+
+  operator   Operator      @relation(fields: [operator_id], references: [id])
+  po         PurchaseOrder @relation(fields: [po_id], references: [id])
+  adminJahit User          @relation("SetoranAdminJahit", fields: [admin_jahit_id], references: [id])
+
+  @@map("setoran_jahit")
+  @@index([tanggal_setoran])
+  @@index([operator_id])
+  @@index([po_id])
+}
