@@ -66,11 +66,12 @@ export default function JahitDashboardClient({
   }, [fetchEntries]);
 
   useEffect(() => {
+    if (readOnly) return;
     fetch("/api/operator")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setOperators(data))
       .catch(() => setOperators([]));
-  }, []);
+  }, [readOnly]);
 
   function applyPreset(preset: "hari-ini" | "minggu-ini" | "minggu-lalu") {
     const now = new Date();
@@ -123,15 +124,15 @@ export default function JahitDashboardClient({
           </Button>
           <select
             value={operatorId}
-            onChange={(e) => setOperatorId(e.target.value)}
-            className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-          >
-            <option value="">Semua Operator</option>
-            {operators.map((op) => (
-              <option key={op.id} value={op.id}>
-                {op.nama_operator}
-              </option>
-            ))}
+              onChange={(e) => setOperatorId(e.target.value)}
+              className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            >
+              <option value="">Semua Operator</option>
+              {operators.map((op) => (
+                <option key={op.id} value={op.id}>
+                  {op.nama_operator}
+                </option>
+              ))}
           </select>
           <Input
             type="date"
