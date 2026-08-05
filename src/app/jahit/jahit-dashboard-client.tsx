@@ -122,8 +122,9 @@ export default function JahitDashboardClient({
           <Button variant="outline" size="sm" onClick={() => applyPreset("minggu-lalu")}>
             Minggu Lalu
           </Button>
-          <select
-            value={operatorId}
+          {!readOnly && (
+            <select
+              value={operatorId}
               onChange={(e) => setOperatorId(e.target.value)}
               className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             >
@@ -133,7 +134,8 @@ export default function JahitDashboardClient({
                   {op.nama_operator}
                 </option>
               ))}
-          </select>
+            </select>
+          )}
           <Input
             type="date"
             value={startDate}
