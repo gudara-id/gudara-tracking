@@ -4,17 +4,22 @@ import { getSession } from "@/lib/auth";
 import { decimalToNumber } from "@/lib/utils";
 
 
-// GET /api/setoran?date=2026-08-04  (defaults to today, server-local date)
+// GET /api/setoran?date=2026-08-04                (single day, defaults to today)
+// GET /api/setoran?start=2026-08-03&end=2026-08-08 (date range, inclusive)
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const startParam = req.nextUrl.searchParams.get("start");
+  const endParam = req.nextUrl.searchParams.get("end");
   const dateParam = req.nextUrl.searchParams.get("date");
-  const target = dateParam ? new Date(dateParam) : new Date();
 
-  const startOfDay = new Date(target);
+  const rangeStartSource = startParam ? new Date(startParam) : dateParam ? new Date(dateParam) : new Date();
+  const rangeEndSource = endParam ? new Date(endParam) : rangeStartSource;
+
+  const startOfDay = new Date(rangeStartSource);
   startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(target);
+  const endOfDay = new Date(rangeEndSource);
   endOfDay.setHours(23, 59, 59, 999);
 
   let entries = await prisma.setoranJahit.findMany({

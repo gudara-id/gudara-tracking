@@ -10,11 +10,16 @@ export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const startParam = req.nextUrl.searchParams.get("start");
+  const endParam = req.nextUrl.searchParams.get("end");
   const dateParam = req.nextUrl.searchParams.get("date");
-  const target = dateParam ? new Date(dateParam) : new Date();
-  const startOfDay = new Date(target);
+
+  const rangeStartSource = startParam ? new Date(startParam) : dateParam ? new Date(dateParam) : new Date();
+  const rangeEndSource = endParam ? new Date(endParam) : rangeStartSource;
+
+  const startOfDay = new Date(rangeStartSource);
   startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(target);
+  const endOfDay = new Date(rangeEndSource);
   endOfDay.setHours(23, 59, 59, 999);
 
   let entries = await prisma.setoranJahit.findMany({
@@ -50,7 +55,10 @@ export async function GET(req: NextRequest) {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Setoran Jahit");
 
   const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-  const filename = `Setoran-Jahit-${format(target, "yyyy-MM-dd")}.xlsx`;
+  const filename =
+    format(startOfDay, "yyyy-MM-dd") === format(endOfDay, "yyyy-MM-dd")
+      ? `Setoran-Jahit-${format(startOfDay, "yyyy-MM-dd")}.xlsx`
+      : `Setoran-Jahit-${format(startOfDay, "yyyy-MM-dd")}_sd_${format(endOfDay, "yyyy-MM-dd")}.xlsx`;
 
   return new NextResponse(buffer, {
     headers: {
