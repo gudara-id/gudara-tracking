@@ -6,6 +6,7 @@ import { decimalToNumber } from "@/lib/utils";
 
 // GET /api/setoran?date=2026-08-04                (single day, defaults to today)
 // GET /api/setoran?start=2026-08-03&end=2026-08-08 (date range, inclusive)
+// GET /api/setoran?...&operator_id=5                (optional: filter satu operator)
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   const startParam = req.nextUrl.searchParams.get("start");
   const endParam = req.nextUrl.searchParams.get("end");
   const dateParam = req.nextUrl.searchParams.get("date");
+  const operatorIdParam = req.nextUrl.searchParams.get("operator_id");
 
   const rangeStartSource = startParam ? new Date(startParam) : dateParam ? new Date(dateParam) : new Date();
   const rangeEndSource = endParam ? new Date(endParam) : rangeStartSource;
@@ -23,7 +25,10 @@ export async function GET(req: NextRequest) {
   endOfDay.setHours(23, 59, 59, 999);
 
   let entries = await prisma.setoranJahit.findMany({
-    where: { tanggal_setoran: { gte: startOfDay, lte: endOfDay } },
+    where: {
+      tanggal_setoran: { gte: startOfDay, lte: endOfDay },
+      ...(operatorIdParam ? { operator_id: Number(operatorIdParam) } : {}),
+    },
     orderBy: { tanggal_setoran: "desc" },
     include: {
       operator: { select: { nama_operator: true } },

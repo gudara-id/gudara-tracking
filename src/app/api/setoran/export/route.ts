@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   const startParam = req.nextUrl.searchParams.get("start");
   const endParam = req.nextUrl.searchParams.get("end");
   const dateParam = req.nextUrl.searchParams.get("date");
+  const operatorIdParam = req.nextUrl.searchParams.get("operator_id");
 
   const rangeStartSource = startParam ? new Date(startParam) : dateParam ? new Date(dateParam) : new Date();
   const rangeEndSource = endParam ? new Date(endParam) : rangeStartSource;
@@ -23,7 +24,10 @@ export async function GET(req: NextRequest) {
   endOfDay.setHours(23, 59, 59, 999);
 
   let entries = await prisma.setoranJahit.findMany({
-    where: { tanggal_setoran: { gte: startOfDay, lte: endOfDay } },
+    where: {
+      tanggal_setoran: { gte: startOfDay, lte: endOfDay },
+      ...(operatorIdParam ? { operator_id: Number(operatorIdParam) } : {}),
+    },
     orderBy: { tanggal_setoran: "asc" },
     include: {
       operator: { select: { nama_operator: true } },

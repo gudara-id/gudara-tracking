@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import InputSetoranJahitModal from "@/components/InputSetoranJahitModal";
 
 type SetoranEntry = {
@@ -16,6 +16,11 @@ type SetoranEntry = {
   total_upah: number;
   operator: { nama_operator: string };
   po: { nama_po: string; nama_artikel: string };
+};
+
+type OperatorOption = {
+  id: number;
+  nama_operator: string;
 };
 
 // Minggu kerja: Senin s/d Sabtu (Sabtu = hari pembayaran).
@@ -39,6 +44,8 @@ export default function JahitDashboardClient({
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState<SetoranEntry[]>([]);
+  const [operators, setOperators] = useState<OperatorOption[]>([]);
+  const [operatorId, setOperatorId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -47,16 +54,23 @@ export default function JahitDashboardClient({
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(
-      `/api/setoran?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`
-    );
+    const params = new URLSearchParams({ start: startDate, end: endDate });
+    if (operatorId) params.set("operator_id", operatorId);
+    const res = await fetch(`/api/setoran?${params.toString()}`);
     if (res.ok) setEntries(await res.json());
     setLoading(false);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, operatorId]);
 
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  useEffect(() => {
+    fetch("/api/operator")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setOperators(data))
+      .catch(() => setOperators([]));
+  }, []);
 
   function applyPreset(preset: "hari-ini" | "minggu-ini" | "minggu-lalu") {
     const now = new Date();
@@ -81,6 +95,7 @@ export default function JahitDashboardClient({
     router.refresh();
   }
 
+  const totalQtyPeriode = entries.reduce((sum, e) => sum + e.qty_disetor, 0);
   const totalUpahPeriode = entries.reduce((sum, e) => sum + e.total_upah, 0);
   const periodeLabel =
     startDate === endDate
@@ -106,6 +121,18 @@ export default function JahitDashboardClient({
           <Button variant="outline" size="sm" onClick={() => applyPreset("minggu-lalu")}>
             Minggu Lalu
           </Button>
+          <select
+            value={operatorId}
+            onChange={(e) => setOperatorId(e.target.value)}
+            className="flex h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+          >
+            <option value="">Semua Operator</option>
+            {operators.map((op) => (
+              <option key={op.id} value={op.id}>
+                {op.nama_operator}
+              </option>
+            ))}
+          </select>
           <Input
             type="date"
             value={startDate}
@@ -123,7 +150,9 @@ export default function JahitDashboardClient({
           <Button
             variant="outline"
             onClick={() =>
-              (window.location.href = `/api/setoran/export?start=${startDate}&end=${endDate}`)
+              (window.location.href = `/api/setoran/export?start=${startDate}&end=${endDate}${
+                operatorId ? `&operator_id=${operatorId}` : ""
+              }`)
             }
           >
             Export ke Excel
@@ -181,6 +210,17 @@ export default function JahitDashboardClient({
             ))
           )}
         </TableBody>
+        {entries.length > 0 && (
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={5} className="text-right">
+                TOTAL
+              </TableCell>
+              <TableCell>{totalQtyPeriode}</TableCell>
+              <TableCell>Rp {totalUpahPeriode.toLocaleString("id-ID")}</TableCell>
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
 
       {!readOnly && <InputSetoranJahitModal open={modalOpen} onOpenChange={setModalOpen} onSaved={fetchEntries} />}
