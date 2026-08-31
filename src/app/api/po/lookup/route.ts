@@ -19,19 +19,21 @@ type PoRow = {
   createdAt: string;
 };
 
-// GET /api/po/lookup?barcode=GDR-PO-...
+// GET /api/po/lookup?barcode=GDR-PO-...  ATAU  GET /api/po/lookup?id=123
+// (id dipakai oleh mode "Input Manual" di modal setoran, saat operator
+// memilih PO dari daftar dropdown alih-alih scan barcode fisik.)
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const barcode = req.nextUrl.searchParams.get("barcode")?.trim();
-  if (!barcode) return NextResponse.json({ error: "Barcode kosong" }, { status: 400 });
+  const idParam = req.nextUrl.searchParams.get("id")?.trim();
+  if (!barcode && !idParam) return NextResponse.json({ error: "Barcode atau ID PO kosong" }, { status: 400 });
 
   const db = getDB();
-  const po = await db
-    .prepare(`SELECT * FROM purchase_orders WHERE barcode_po = ?1`)
-    .bind(barcode)
-    .first<PoRow>();
+  const po = barcode
+    ? await db.prepare(`SELECT * FROM purchase_orders WHERE barcode_po = ?1`).bind(barcode).first<PoRow>()
+    : await db.prepare(`SELECT * FROM purchase_orders WHERE id = ?1`).bind(Number(idParam)).first<PoRow>();
 
   if (!po) {
     return NextResponse.json({ error: "PO tidak ditemukan. Cek kembali barcode." }, { status: 404 });

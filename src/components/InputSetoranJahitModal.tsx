@@ -30,7 +30,7 @@ async function compressPhotoToDataUrl(file: File, maxDimension = 1024, quality =
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-type OperatorData = { id: number; nama_operator: string; barcode_operator: string };
+type OperatorData = { id: number; nama_operator: string; barcode_operator: string; status?: string };
 type PoData = {
   id: number;
   nama_po: string;
@@ -40,6 +40,7 @@ type PoData = {
   target_qty: number | null;
   qty_terselesaikan: number;
 };
+type PoListItem = { id: number; nomor_po: string; nama_po: string; nama_artikel: string; status: string };
 
 export default function InputSetoranJahitModal({
   open,
@@ -65,6 +66,13 @@ export default function InputSetoranJahitModal({
   const [fotoDataUrl, setFotoDataUrl] = useState<string | null>(null);
   const [compressingFoto, setCompressingFoto] = useState(false);
 
+  // Mode input per-langkah: "scan" (default, scan barcode fisik/kamera) atau
+  // "manual" (pilih dari dropdown) — fallback kalau alat scanner error/rusak.
+  const [operatorMode, setOperatorMode] = useState<"scan" | "manual">("scan");
+  const [poMode, setPoMode] = useState<"scan" | "manual">("scan");
+  const [operatorList, setOperatorList] = useState<OperatorData[]>([]);
+  const [poList, setPoList] = useState<PoListItem[]>([]);
+
   const operatorInputRef = useRef<HTMLInputElement>(null);
   const poInputRef = useRef<HTMLInputElement>(null);
   const qtyInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +81,22 @@ export default function InputSetoranJahitModal({
   useEffect(() => {
     if (!open) return;
     resetAll();
+    setOperatorMode("scan");
+    setPoMode("scan");
     focusOperator(80);
+  }, [open]);
+
+  // Data untuk dropdown mode manual, dimuat sekali tiap modal dibuka.
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/operator")
+      .then((res) => res.json())
+      .then((data: OperatorData[]) => setOperatorList(Array.isArray(data) ? data : []))
+      .catch(() => setOperatorList([]));
+    fetch("/api/po")
+      .then((res) => res.json())
+      .then((data: PoListItem[]) => setPoList(Array.isArray(data) ? data : []))
+      .catch(() => setPoList([]));
   }, [open]);
 
   useEffect(() => {
@@ -192,6 +215,31 @@ export default function InputSetoranJahitModal({
     handlePoScan(poBarcode);
   }
 
+  // --- Mode manual (fallback kalau scanner error) ---
+  function handleOperatorManualSelect(idStr: string) {
+    const found = operatorList.find((o) => o.id === Number(idStr));
+    if (!found) return;
+    setOperator(found);
+  }
+
+  async function handlePoManualSelect(idStr: string) {
+    if (!idStr) return;
+    setLookingUpPo(true);
+    try {
+      const res = await fetch(`/api/po/lookup?id=${encodeURIComponent(idStr)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "PO tidak ditemukan");
+        return;
+      }
+      setPo(data);
+    } catch {
+      toast.error("Gagal memeriksa PO");
+    } finally {
+      setLookingUpPo(false);
+    }
+  }
+
   function handleQtyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Enter") return;
     e.preventDefault();
@@ -262,7 +310,8 @@ export default function InputSetoranJahitModal({
             <ScanLine className="h-5 w-5 text-denim-600" /> Input Setoran Jahit
           </DialogTitle>
           <DialogDescription>
-            Scan kartu ID operator, scan barcode PO pada bundel, lalu isi QTY dan tekan Enter.
+            Scan kartu ID operator, scan barcode PO pada bundel, lalu isi QTY dan tekan Enter. Kalau scanner
+            error/rusak, klik &quot;Input manual&quot; di sebelah kanan tiap langkah untuk pilih dari daftar.
           </DialogDescription>
         </DialogHeader>
 
@@ -270,53 +319,127 @@ export default function InputSetoranJahitModal({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="scan_operator">1. Scan ID Operator</Label>
-              <button
-                type="button"
-                onClick={() => setScanTarget("operator")}
-                disabled={!!operator}
-                className="tap-shrink inline-flex shrink-0 items-center gap-1 text-xs font-medium text-denim-700 hover:text-denim-900 disabled:pointer-events-none disabled:opacity-40"
-              >
-                <Camera className="h-3.5 w-3.5" /> Scan Kamera
-              </button>
+              <div className="flex shrink-0 items-center gap-3">
+                {operatorMode === "scan" && (
+                  <button
+                    type="button"
+                    onClick={() => setScanTarget("operator")}
+                    disabled={!!operator}
+                    className="tap-shrink inline-flex items-center gap-1 text-xs font-medium text-denim-700 hover:text-denim-900 disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Scan Kamera
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOperatorMode(operatorMode === "scan" ? "manual" : "scan");
+                    setOperator(null);
+                    setOperatorBarcode("");
+                  }}
+                  disabled={!!operator}
+                  className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline disabled:pointer-events-none disabled:opacity-40"
+                >
+                  {operatorMode === "scan" ? "Input manual" : "Scan barcode"}
+                </button>
+              </div>
             </div>
-            <Input
-              id="scan_operator"
-              ref={operatorInputRef}
-              value={operator ? `${operator.nama_operator} (${operator.barcode_operator})` : operatorBarcode}
-              onChange={(e) => setOperatorBarcode(e.target.value)}
-              onKeyDown={handleOperatorKeyDown}
-              readOnly={!!operator}
-              disabled={lookingUpOperator}
-              placeholder="Scan kartu ID operator..."
-              className={operator ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : ""}
-              autoComplete="off"
-            />
+            {operatorMode === "manual" ? (
+              <select
+                id="scan_operator"
+                value={operator?.id ?? ""}
+                onChange={(e) => handleOperatorManualSelect(e.target.value)}
+                disabled={!!operator}
+                className={`h-10 rounded-md border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-denim-200 ${
+                  operator ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : "border-slate-300 bg-white"
+                }`}
+              >
+                <option value="">Pilih operator...</option>
+                {operatorList
+                  .filter((o) => o.status !== "non-aktif")
+                  .map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.nama_operator}
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <Input
+                id="scan_operator"
+                ref={operatorInputRef}
+                value={operator ? `${operator.nama_operator} (${operator.barcode_operator})` : operatorBarcode}
+                onChange={(e) => setOperatorBarcode(e.target.value)}
+                onKeyDown={handleOperatorKeyDown}
+                readOnly={!!operator}
+                disabled={lookingUpOperator}
+                placeholder="Scan kartu ID operator..."
+                className={operator ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : ""}
+                autoComplete="off"
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="scan_po">2. Scan PO</Label>
-              <button
-                type="button"
-                onClick={() => setScanTarget("po")}
-                disabled={!operator || !!po}
-                className="tap-shrink inline-flex shrink-0 items-center gap-1 text-xs font-medium text-denim-700 hover:text-denim-900 disabled:pointer-events-none disabled:opacity-40"
-              >
-                <Camera className="h-3.5 w-3.5" /> Scan Kamera
-              </button>
+              <div className="flex shrink-0 items-center gap-3">
+                {poMode === "scan" && (
+                  <button
+                    type="button"
+                    onClick={() => setScanTarget("po")}
+                    disabled={!operator || !!po}
+                    className="tap-shrink inline-flex items-center gap-1 text-xs font-medium text-denim-700 hover:text-denim-900 disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Scan Kamera
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPoMode(poMode === "scan" ? "manual" : "scan");
+                    setPo(null);
+                    setPoBarcode("");
+                  }}
+                  disabled={!operator || !!po}
+                  className="text-xs font-medium text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline disabled:pointer-events-none disabled:opacity-40"
+                >
+                  {poMode === "scan" ? "Input manual" : "Scan barcode"}
+                </button>
+              </div>
             </div>
-            <Input
-              id="scan_po"
-              ref={poInputRef}
-              value={po ? `${po.nama_po} (${po.barcode_po})` : poBarcode}
-              onChange={(e) => setPoBarcode(e.target.value)}
-              onKeyDown={handlePoKeyDown}
-              readOnly={!!po}
-              disabled={!operator || lookingUpPo}
-              placeholder={operator ? "Scan barcode PO pada bundel..." : "Scan operator terlebih dahulu"}
-              className={po ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : ""}
-              autoComplete="off"
-            />
+            {poMode === "manual" ? (
+              <select
+                id="scan_po"
+                value={po?.id ?? ""}
+                onChange={(e) => handlePoManualSelect(e.target.value)}
+                disabled={!operator || !!po || lookingUpPo}
+                className={`h-10 rounded-md border px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-denim-200 ${
+                  po ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : "border-slate-300 bg-white"
+                }`}
+              >
+                <option value="">Pilih PO...</option>
+                {poList
+                  .filter((item) => item.status !== "selesai" && item.status !== "TERKIRIM" && item.status !== "dibatalkan")
+                  .map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nomor_po} - {item.nama_po} ({item.nama_artikel})
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <Input
+                id="scan_po"
+                ref={poInputRef}
+                value={po ? `${po.nama_po} (${po.barcode_po})` : poBarcode}
+                onChange={(e) => setPoBarcode(e.target.value)}
+                onKeyDown={handlePoKeyDown}
+                readOnly={!!po}
+                disabled={!operator || lookingUpPo}
+                placeholder={operator ? "Scan barcode PO pada bundel..." : "Scan operator terlebih dahulu"}
+                className={po ? "border-emerald-400 bg-emerald-50 font-medium text-emerald-800" : ""}
+                autoComplete="off"
+              />
+            )}
             {po && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50/60 px-3 py-2">
                 <p className="text-xs text-slate-500">
