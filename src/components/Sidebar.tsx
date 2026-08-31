@@ -12,7 +12,6 @@ type NavItem = { href: string; label: string; icon: React.ComponentType<{ classN
 const NAV_BY_ROLE: Record<Profile["role"], NavItem[]> = {
   admin_produksi: [
     { href: "/produksi", label: "Board Produksi", icon: LayoutDashboard },
-    { href: "/order", label: "Order", icon: ShoppingCart },
     { href: "/analitik", label: "Analitik", icon: BarChart3 },
     { href: "/payroll", label: "Payroll", icon: Wallet },
     { href: "/konfigurasi", label: "Konfigurasi", icon: Settings },
@@ -27,7 +26,10 @@ const NAV_BY_ROLE: Record<Profile["role"], NavItem[]> = {
   ],
   operator_produksi: [{ href: "/operator-produksi", label: "Board Produksi", icon: PackageCheck }],
   kurir: [{ href: "/kurir", label: "Pengiriman", icon: Truck }],
-  sales: [{ href: "/order", label: "Order", icon: ShoppingCart }],
+  sales: [
+    { href: "/order", label: "Order", icon: ShoppingCart },
+    { href: "/konfigurasi", label: "SKU Produk", icon: Settings },
+  ],
 };
 
 export default function Sidebar({ fallbackName }: { fallbackName: string }) {

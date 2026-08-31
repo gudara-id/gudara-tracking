@@ -29,8 +29,11 @@ type OperatorRow = { id: number; barcode_operator: string; nama_operator: string
 type AppSetting = { id: number; key: string; value: string; label: string; description: string | null; updatedAt: string; createdAt: string };
 type StageRow = { id: number; nama: string; urutan: number; createdAt: string };
 
-export default function KonfigurasiClient({ namaLengkap }: { namaLengkap: string }) {
-  const [activeTab, setActiveTab] = useState<"artikel" | "sku" | "operator" | "user" | "tahapan" | "lainnya">("artikel");
+export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: string; role: string }) {
+  const isSales = role === "sales";
+  const [activeTab, setActiveTab] = useState<"artikel" | "sku" | "operator" | "user" | "tahapan" | "lainnya">(
+    isSales ? "sku" : "artikel"
+  );
   const [artikels, setArtikels] = useState<Artikel[]>([]);
   const [skuProducts, setSkuProducts] = useState<SkuProduct[]>([]);
   const [skuLoadError, setSkuLoadError] = useState("");
@@ -69,16 +72,10 @@ export default function KonfigurasiClient({ namaLengkap }: { namaLengkap: string
   const [showBulkHargaInput, setShowBulkHargaInput] = useState(false);
 
   const fetchConfig = useCallback(async () => {
-    const [artikelRes, skuRes, userRes, operatorRes, settingsRes, stageRes, addOnRes] = await Promise.all([
-      fetch("/api/artikel?includeInactive=1"),
-      fetch("/api/sku-produk"),
-      fetch("/api/users"),
-      fetch("/api/operator"),
-      fetch("/api/settings"),
-      fetch("/api/tahapan"),
-      fetch("/api/addon"),
-    ]);
-    if (artikelRes.ok) setArtikels(await artikelRes.json());
+    // Role "sales" cuma melihat tab SKU Produk Order, jadi tidak perlu
+    // fetch data untuk tab-tab lain yang disembunyikan (dan yang API-nya
+    // memang dibatasi untuk admin_produksi).
+    const skuRes = await fetch("/api/sku-produk");
     if (skuRes.ok) {
       setSkuProducts(await skuRes.json());
       setSkuLoadError("");
@@ -86,12 +83,24 @@ export default function KonfigurasiClient({ namaLengkap }: { namaLengkap: string
       const data = await skuRes.json().catch(() => null);
       setSkuLoadError(data?.error || "Gagal memuat SKU produk");
     }
+
+    if (isSales) return;
+
+    const [artikelRes, userRes, operatorRes, settingsRes, stageRes, addOnRes] = await Promise.all([
+      fetch("/api/artikel?includeInactive=1"),
+      fetch("/api/users"),
+      fetch("/api/operator"),
+      fetch("/api/settings"),
+      fetch("/api/tahapan"),
+      fetch("/api/addon"),
+    ]);
+    if (artikelRes.ok) setArtikels(await artikelRes.json());
     if (userRes.ok) setUsers(await userRes.json());
     if (operatorRes.ok) setOperators(await operatorRes.json());
     if (settingsRes.ok) setSettings(await settingsRes.json());
     if (stageRes.ok) setStages(await stageRes.json());
     if (addOnRes.ok) setAddOns(await addOnRes.json());
-  }, []);
+  }, [isSales]);
 
   useEffect(() => {
     fetchConfig();
@@ -621,14 +630,17 @@ export default function KonfigurasiClient({ namaLengkap }: { namaLengkap: string
       </div>
 
       <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
-        {[
-          ["artikel", "Database Artikel"],
-          ["sku", "SKU Produk Order"],
-          ["operator", "Operator & Barcode"],
-          ["user", "User"],
-          ["tahapan", "Tahapan Produksi"],
-          ["lainnya", "Konfigurasi Lainnya"],
-        ].map(([key, label]) => (
+        {(
+          isSales
+            ? [["sku", "SKU Produk Order"]]
+            : [
+                ["artikel", "Database Artikel"],
+                ["operator", "Operator & Barcode"],
+                ["user", "User"],
+                ["tahapan", "Tahapan Produksi"],
+                ["lainnya", "Konfigurasi Lainnya"],
+              ]
+        ).map(([key, label]) => (
           <Button key={key} variant={activeTab === key ? "default" : "outline"} className="shrink-0" onClick={() => setActiveTab(key as typeof activeTab)}>
             {label}
           </Button>

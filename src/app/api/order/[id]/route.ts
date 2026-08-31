@@ -17,7 +17,7 @@ type OrderItemRow = {
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || session.role !== "sales") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || session.role !== "sales") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

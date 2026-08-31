@@ -40,7 +40,6 @@ export async function middleware(req: NextRequest) {
   // Halaman-halaman berikut masing-masing hanya untuk satu role spesifik.
   const singleRolePages: [string, SessionPayload["role"]][] = [
     ["/produksi", "admin_produksi"],
-    ["/konfigurasi", "admin_produksi"],
     ["/analitik", "admin_produksi"],
     ["/jahit", "admin_jahit"],
     ["/operator-jahit", "operator_jahit"],
@@ -60,8 +59,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
   }
 
-  // Order (dashboard penjualan/order customer): admin_produksi + role sales.
-  if (pathname.startsWith("/order") && !["admin_produksi", "sales"].includes(session.role)) {
+  // Order (dashboard penjualan/order customer): khusus role sales.
+  if (pathname.startsWith("/order") && session.role !== "sales") {
+    return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
+  }
+
+  // Konfigurasi: admin_produksi (semua tab kecuali SKU Produk Order) + sales
+  // (hanya tab SKU Produk Order, difilter di halaman/komponennya).
+  if (pathname.startsWith("/konfigurasi") && !["admin_produksi", "sales"].includes(session.role)) {
     return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
   }
 

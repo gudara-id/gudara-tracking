@@ -32,7 +32,7 @@ type ArtikelRow = { id: number; kode_artikel: string | null; nama_artikel: strin
 
 export async function GET() {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || session.role !== "sales") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -62,7 +62,7 @@ export async function GET() {
 // dipakai saat validasi nanti.
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || session.role !== "sales") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
