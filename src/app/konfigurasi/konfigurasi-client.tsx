@@ -70,6 +70,8 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
   const [bulkSkuSaving, setBulkSkuSaving] = useState(false);
   const [bulkHargaInput, setBulkHargaInput] = useState("");
   const [showBulkHargaInput, setShowBulkHargaInput] = useState(false);
+  const [skuSearch, setSkuSearch] = useState("");
+  const [skuStatusFilter, setSkuStatusFilter] = useState<"semua" | "aktif" | "non-aktif">("semua");
 
   const fetchConfig = useCallback(async () => {
     // Role "sales" cuma melihat tab SKU Produk Order, jadi tidak perlu
@@ -214,6 +216,15 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
     return !query || artikel.nama_artikel.toLowerCase().includes(query) || artikel.kode_artikel?.toLowerCase().includes(query);
   });
   const allFilteredArtikelsSelected = filteredArtikels.length > 0 && filteredArtikels.every((artikel) => selectedArtikelIds.includes(artikel.id));
+
+  const filteredSkuProducts = skuProducts.filter((product) => {
+    const query = skuSearch.trim().toLowerCase();
+    const matchesQuery = !query || product.sku.toLowerCase().includes(query) || product.nama_produk.toLowerCase().includes(query);
+    const matchesStatus = skuStatusFilter === "semua" || product.status === skuStatusFilter;
+    return matchesQuery && matchesStatus;
+  });
+  const allFilteredSkuSelected = filteredSkuProducts.length > 0 && filteredSkuProducts.every((product) => selectedSkuIds.includes(product.id));
+  const skuAktifCount = skuProducts.filter((product) => product.status === "aktif").length;
 
   function toggleSelectArtikel(id: number) {
     setSelectedArtikelIds((current) => (current.includes(id) ? current.filter((artikelId) => artikelId !== id) : [...current, id]));
@@ -376,7 +387,10 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
   }
 
   function toggleSelectAllSku() {
-    setSelectedSkuIds((prev) => (prev.length === skuProducts.length ? [] : skuProducts.map((p) => p.id)));
+    const filteredIds = filteredSkuProducts.map((product) => product.id);
+    setSelectedSkuIds((prev) =>
+      allFilteredSkuSelected ? prev.filter((id) => !filteredIds.includes(id)) : Array.from(new Set([...prev, ...filteredIds]))
+    );
   }
 
   function clearSkuSelection() {
@@ -805,9 +819,14 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
 
       {activeTab === "sku" && (
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
-          <form onSubmit={saveSkuProduct} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 font-display font-semibold text-denim-800">
-              <Package className="h-4 w-4 text-thread-500" /> {editingSkuId ? "Edit SKU Produk" : "Tambah SKU Produk"}
+          <form onSubmit={saveSkuProduct} className="h-fit rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+            <div className="mb-4 border-b border-slate-100 pb-4">
+              <h2 className="flex items-center gap-2 font-display font-semibold text-denim-800">
+                <Package className="h-4 w-4 text-thread-500" /> {editingSkuId ? "Edit SKU Produk" : "Tambah SKU Produk"}
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Satu SKU = satu varian ukuran/warna. Gunakan pola nama yang konsisten (mis. KODE-UKURAN) supaya mudah dicari.
+              </p>
             </div>
             <div className="space-y-3">
               <div>
@@ -824,6 +843,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
                 <Input
                   value={skuForm.nama_produk}
                   onChange={(e) => setSkuForm({ ...skuForm, nama_produk: e.target.value })}
+                  placeholder="Contoh: Waistbag Denim"
                   required
                 />
               </div>
@@ -834,8 +854,10 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
                   min="0"
                   value={skuForm.harga_satuan}
                   onChange={(e) => setSkuForm({ ...skuForm, harga_satuan: e.target.value })}
+                  placeholder="Contoh: 85000"
                   required
                 />
+                <p className="mt-1 text-xs text-slate-400">Harga yang tampil di form pemesanan customer.</p>
               </div>
               <div>
                 <Label>Status</Label>
@@ -905,30 +927,73 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
             </div>
           </form>
 
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3">
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={skuProducts.length > 0 && selectedSkuIds.length === skuProducts.length}
-                  onChange={toggleSelectAllSku}
-                />
-                Pilih semua ({skuProducts.length})
-              </label>
+          <div className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm">
+            {/* Header: judul, ringkasan jumlah, dan tombol edit massal */}
+            <div className="flex flex-col gap-3 border-b border-slate-100 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-display font-semibold text-denim-800">Daftar SKU Produk Order</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {skuProducts.length} SKU tersimpan &middot; {skuAktifCount} aktif &middot; {skuProducts.length - skuAktifCount} non-aktif
+                  </p>
+                </div>
+                {selectedSkuIds.length > 0 && (
+                  <span className="w-fit rounded-full bg-denim-50 px-2.5 py-1 text-xs font-medium text-denim-700">
+                    {selectedSkuIds.length} SKU dipilih
+                  </span>
+                )}
+              </div>
+
+              {/* Pencarian + filter status */}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={skuSearch}
+                    onChange={(e) => setSkuSearch(e.target.value)}
+                    placeholder="Cari SKU atau nama produk..."
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-1.5">
+                  {(
+                    [
+                      ["semua", "Semua"],
+                      ["aktif", "Aktif"],
+                      ["non-aktif", "Non-aktif"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSkuStatusFilter(value)}
+                      className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        skuStatusFilter === value
+                          ? "border-denim-800 bg-denim-900 text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bar aksi massal — hanya tampil kalau ada yang dicentang */}
               {selectedSkuIds.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500">{selectedSkuIds.length} SKU dipilih</span>
-                  <Button type="button" variant="outline" disabled={bulkSkuSaving} onClick={() => bulkUpdateSkuStatus("aktif")}>
+                <div className="flex flex-wrap items-center gap-2 rounded-md bg-slate-50 p-2">
+                  <Button type="button" size="sm" variant="outline" disabled={bulkSkuSaving} onClick={() => bulkUpdateSkuStatus("aktif")}>
                     Aktifkan
                   </Button>
-                  <Button type="button" variant="outline" disabled={bulkSkuSaving} onClick={() => bulkUpdateSkuStatus("non-aktif")}>
+                  <Button type="button" size="sm" variant="outline" disabled={bulkSkuSaving} onClick={() => bulkUpdateSkuStatus("non-aktif")}>
                     Non-aktifkan
                   </Button>
-                  <Button type="button" variant="outline" disabled={bulkSkuSaving} onClick={() => setShowBulkHargaInput((v) => !v)}>
+                  <Button type="button" size="sm" variant="outline" disabled={bulkSkuSaving} onClick={() => setShowBulkHargaInput((v) => !v)}>
                     Ubah Harga
                   </Button>
                   <Button
                     type="button"
+                    size="sm"
                     variant="outline"
                     disabled={bulkSkuSaving}
                     onClick={bulkDeleteSku}
@@ -936,50 +1001,54 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Hapus
                   </Button>
-                  <Button type="button" variant="ghost" disabled={bulkSkuSaving} onClick={clearSkuSelection}>
+                  <Button type="button" size="sm" variant="ghost" disabled={bulkSkuSaving} onClick={clearSkuSelection}>
                     <X className="mr-1 h-3.5 w-3.5" /> Batal
                   </Button>
                 </div>
               )}
+              {showBulkHargaInput && selectedSkuIds.length > 0 && (
+                <form onSubmit={bulkUpdateSkuHarga} className="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-3">
+                  <div className="w-40">
+                    <Label>Harga order baru</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={bulkHargaInput}
+                      onChange={(e) => setBulkHargaInput(e.target.value)}
+                      placeholder="Contoh: 85000"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" size="sm" disabled={bulkSkuSaving}>
+                    Terapkan ke {selectedSkuIds.length} SKU
+                  </Button>
+                </form>
+              )}
             </div>
-            {showBulkHargaInput && selectedSkuIds.length > 0 && (
-              <form onSubmit={bulkUpdateSkuHarga} className="flex flex-wrap items-end gap-2 border-b border-slate-100 bg-slate-50 p-3">
-                <div className="w-40">
-                  <Label>Harga order baru</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={bulkHargaInput}
-                    onChange={(e) => setBulkHargaInput(e.target.value)}
-                    placeholder="Contoh: 85000"
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={bulkSkuSaving}>
-                  Terapkan ke {selectedSkuIds.length} SKU
-                </Button>
-              </form>
-            )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead></TableHead>
-                  <TableHead>Foto</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Nama Produk</TableHead>
-                  <TableHead>Harga Order</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {skuProducts.map((product) => (
-                  <TableRow key={product.id} className={selectedSkuIds.includes(product.id) ? "bg-denim-50/60" : undefined}>
-                    <TableCell>
-                      <input type="checkbox" checked={selectedSkuIds.includes(product.id)} onChange={() => toggleSelectSku(product.id)} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+
+            {/* Mobile: kartu — lebih mudah dibaca & disentuh daripada tabel 7 kolom */}
+            <div className="space-y-2 p-3 md:hidden">
+              {filteredSkuProducts.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  {skuLoadError || (skuProducts.length === 0 ? "Belum ada SKU produk order." : "Tidak ada SKU yang cocok dengan pencarian.")}
+                </p>
+              ) : (
+                filteredSkuProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className={`rounded-lg border p-3 shadow-sm ${
+                      selectedSkuIds.includes(product.id) ? "border-denim-300 bg-denim-50/60" : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        aria-label={`Pilih ${product.nama_produk}`}
+                        type="checkbox"
+                        checked={selectedSkuIds.includes(product.id)}
+                        onChange={() => toggleSelectSku(product.id)}
+                        className="mt-3 h-4 w-4 shrink-0 accent-denim-700"
+                      />
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                         {product.foto_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={product.foto_url} alt={product.nama_produk} className="h-full w-full object-cover" />
@@ -987,40 +1056,116 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
                           <ImageOff className="h-4 w-4 text-slate-300" />
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs font-medium">{product.sku}</TableCell>
-                    <TableCell className="font-medium">{product.nama_produk}</TableCell>
-                    <TableCell>Rp {product.harga_satuan.toLocaleString("id-ID")}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          product.status === "aktif" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
-                        }`}
-                      >
-                        {product.status === "aktif" ? "Aktif" : "Non-aktif"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button type="button" variant="ghost" onClick={() => startEditSku(product)} title="Edit SKU produk">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" variant="ghost" onClick={() => deleteSkuProduct(product.id)} title="Hapus SKU produk">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-900">{product.nama_produk}</p>
+                            <p className="font-mono text-xs text-slate-500">{product.sku}</p>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              product.status === "aktif" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
+                            }`}
+                          >
+                            {product.status === "aktif" ? "Aktif" : "Non-aktif"}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between border-t border-dashed border-slate-200 pt-2">
+                          <span className="text-sm font-semibold text-denim-900">Rp {product.harga_satuan.toLocaleString("id-ID")}</span>
+                          <div className="flex items-center gap-1">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => startEditSku(product)} title="Edit SKU produk">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => deleteSkuProduct(product.id)} title="Hapus SKU produk">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {skuProducts.length === 0 && (
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop / tablet: tabel penuh */}
+            <div className="hidden overflow-x-auto md:block">
+              <Table className="min-w-[720px]">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="py-6 text-center text-sm text-slate-400">
-                      {skuLoadError || "Belum ada SKU produk order. Jalankan seed SKU jika data dari Excel belum masuk."}
-                    </TableCell>
+                    <TableHead className="w-10">
+                      <input
+                        aria-label="Pilih semua SKU yang tampil"
+                        type="checkbox"
+                        checked={allFilteredSkuSelected}
+                        onChange={toggleSelectAllSku}
+                        className="h-4 w-4 accent-denim-700"
+                      />
+                    </TableHead>
+                    <TableHead className="w-16">Foto</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Nama Produk</TableHead>
+                    <TableHead>Harga Order</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-20">Aksi</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredSkuProducts.map((product) => (
+                    <TableRow key={product.id} className={selectedSkuIds.includes(product.id) ? "bg-denim-50/60" : undefined}>
+                      <TableCell>
+                        <input
+                          aria-label={`Pilih ${product.nama_produk}`}
+                          type="checkbox"
+                          checked={selectedSkuIds.includes(product.id)}
+                          onChange={() => toggleSelectSku(product.id)}
+                          className="h-4 w-4 accent-denim-700"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                          {product.foto_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={product.foto_url} alt={product.nama_produk} className="h-full w-full object-cover" />
+                          ) : (
+                            <ImageOff className="h-4 w-4 text-slate-300" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-medium">{product.sku}</TableCell>
+                      <TableCell className="font-medium">{product.nama_produk}</TableCell>
+                      <TableCell>Rp {product.harga_satuan.toLocaleString("id-ID")}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            product.status === "aktif" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
+                          }`}
+                        >
+                          {product.status === "aktif" ? "Aktif" : "Non-aktif"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button type="button" variant="ghost" size="icon" onClick={() => startEditSku(product)} title="Edit SKU produk">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button type="button" variant="ghost" size="icon" onClick={() => deleteSkuProduct(product.id)} title="Hapus SKU produk">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredSkuProducts.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-sm text-slate-500">
+                        {skuLoadError || (skuProducts.length === 0 ? "Belum ada SKU produk order. Jalankan seed SKU jika data dari Excel belum masuk." : "Tidak ada SKU yang cocok dengan pencarian.")}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </section>
       )}
