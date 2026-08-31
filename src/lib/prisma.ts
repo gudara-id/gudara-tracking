@@ -1,6 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaD1 } from "@prisma/adapter-d1";
+import { PrismaClient } from '@prisma/client';
+import { PrismaD1 } from '@prisma/adapter-d1';
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import type { D1Database } from "@cloudflare/workers-types";
 
 // Cloudflare D1 has no persistent Node-style connection, so unlike a normal
 // SQLite/Postgres setup we can't build one PrismaClient at module load time.
@@ -11,7 +12,11 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 // entirely (it needs to spawn workerd/miniflare, which fails on this machine)
 // and fall back to a plain SQLite PrismaClient using DATABASE_URL from .env.
 
-type CloudflareEnv = { DB: D1Database };
+declare global {
+  interface CloudflareEnv {
+    DB: D1Database;
+  }
+}
 
 let cachedClient: PrismaClient | undefined;
 
@@ -19,7 +24,7 @@ function getClient(): PrismaClient {
   if (cachedClient) return cachedClient;
 
   try {
-    const { env } = getCloudflareContext<CloudflareEnv>();
+    const { env } = getCloudflareContext();
     const adapter = new PrismaD1(env.DB);
     cachedClient = new PrismaClient({ adapter });
   } catch {

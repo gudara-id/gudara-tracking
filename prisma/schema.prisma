@@ -25,25 +25,77 @@ model User {
   password_hash String
   role          String
   nama_lengkap  String
+  email         String?  @unique
+  avatar_url    String?
   createdAt     DateTime @default(now())
 
-  purchaseOrders PurchaseOrder[] @relation("POCreatedBy")
-  setoranEntries SetoranJahit[]  @relation("SetoranAdminJahit")
+  purchaseOrders   PurchaseOrder[]      @relation("POCreatedBy")
+  setoranEntries   SetoranJahit[]       @relation("SetoranAdminJahit")
+  activityLogs     ActivityLog[]
+  resetTokens      PasswordResetToken[]
+  poMemberships    PoMember[]
+  payrollPeriodsCreated PayrollPeriod[] @relation("PayrollPeriodCreator")
+  payrollPeriodsPaid    PayrollPeriod[] @relation("PayrollPeriodPayer")
+  payrollAdjustments    PayrollAdjustment[]
+  ordersConfirmed       Order[]
+  ordersCancelled       Order[]              @relation("OrderCancelledBy")
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  token_hash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+  @@index([user_id])
+  @@index([expiresAt])
 }
 
 model Artikel {
   id           Int      @id @default(autoincrement())
   kode_artikel String?  @unique
   nama_artikel String   @unique
+  // Ongkos jasa jahit per pcs - dasar hitung gaji operator jahit (payroll).
   harga_satuan Decimal
+  // Harga jual ke customer. Terpisah dari harga_satuan supaya perubahan
+  // markup/harga jual tidak ikut mengubah dasar hitung gaji jahit.
+  // Kalau diisi (>0) dan status aktif, artikel ini ikut tampil di katalog
+  // customer /order-form berdampingan dengan SkuProduct, dan dipakai
+  // sebagai harga saat admin bikin Order/PO manual pilih artikel ini.
+  harga_jual   Decimal? @default(0)
   status       String   @default("aktif")
   createdAt    DateTime @default(now())
 
   poItems PurchaseOrderArticle[]
+  orderItems OrderItem[]
 
   @@map("artikels")
+}
+
+model SkuProduct {
+  id           Int      @id @default(autoincrement())
+  sku          String   @unique
+  nama_produk  String
+  harga_satuan Decimal  @default(0)
+  status       String   @default("aktif")
+  // Foto produk, disimpan sebagai data URL base64 (dikompres di browser),
+  // sama seperti pola setoran_jahit.foto_url. Dipakai untuk tampilan
+  // marketplace di /order-form. Satu foto berlaku untuk semua SKU dengan
+  // nama_produk yang sama (lihat groupPhotoBySku di order-form).
+  foto_url     String?
+  createdAt    DateTime @default(now())
+
+  orderItems OrderItem[]
+
+  @@map("sku_products")
+  @@index([status])
 }
 
 model Operator {
@@ -54,6 +106,7 @@ model Operator {
   createdAt        DateTime @default(now())
 
   setoranEntries SetoranJahit[]
+  payrollAdjustments PayrollAdjustment[]
 
   @@map("operators")
 }
@@ -77,8 +130,53 @@ model PurchaseOrder {
   setoranEntries SetoranJahit[]
   articles       PurchaseOrderArticle[]
   attachments    PurchaseOrderAttachment[]
+  members        PoMember[]
+  checklistItems PoChecklistItem[]
+  addOns         PurchaseOrderAddOn[]
+  ordersFromRequest Order[]     @relation("OrderValidatedIntoPo")
 
   @@map("purchase_orders")
+}
+
+// Master catalog of add-ons / aksesoris (e.g. bordir, aksesoris tambahan)
+// that can be attached to a PO on top of the base artikel price. Managed in
+// Konfigurasi > Database Artikel.
+model AddOn {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  harga     Decimal
+  status    String   @default("aktif")
+  createdAt DateTime @default(now())
+
+  poAddOns PurchaseOrderAddOn[]
+
+  @@map("add_ons")
+}
+
+// Add-ons selected for a specific PO ARTICLE LINE (po_article_id) — each
+// artikel in a PO can have its own different set of add-ons, since a PO can
+// bundle several different artikel. nama_addon/harga_addon are a snapshot at
+// the time the PO was created, so later edits/deletion of the AddOn master
+// record don't rewrite history — same pattern as PurchaseOrderArticle's
+// harga_satuan snapshot. The sum of harga_addon for an article line is added
+// on top of that line's base artikel price to form its final harga_satuan.
+// po_id is kept alongside po_article_id purely for convenient/fast lookups.
+model PurchaseOrderAddOn {
+  id            Int      @id @default(autoincrement())
+  po_id         Int
+  po_article_id Int?
+  addon_id      Int?
+  nama_addon    String
+  harga_addon   Decimal
+  createdAt     DateTime @default(now())
+
+  po        PurchaseOrder         @relation(fields: [po_id], references: [id], onDelete: Cascade)
+  poArticle PurchaseOrderArticle? @relation(fields: [po_article_id], references: [id], onDelete: Cascade)
+  addon     AddOn?                @relation(fields: [addon_id], references: [id])
+
+  @@map("purchase_order_addons")
+  @@index([po_id])
+  @@index([po_article_id])
 }
 
 model PurchaseOrderArticle {
@@ -92,6 +190,7 @@ model PurchaseOrderArticle {
 
   po      PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
   artikel Artikel?      @relation(fields: [artikel_id], references: [id])
+  addOns  PurchaseOrderAddOn[]
 
   @@map("purchase_order_articles")
   @@index([po_id])
@@ -118,9 +217,12 @@ model SetoranJahit {
   operator_id           Int
   po_id                 Int
   qty_disetor           Int
+  qty_reject            Int      @default(0)
+  catatan_reject        String?
   harga_satuan_snapshot Decimal
   total_upah            Decimal
   admin_jahit_id        Int
+  foto_url              String?
 
   operator   Operator      @relation(fields: [operator_id], references: [id])
   po         PurchaseOrder @relation(fields: [po_id], references: [id])
@@ -130,4 +232,182 @@ model SetoranJahit {
   @@index([tanggal_setoran])
   @@index([operator_id])
   @@index([po_id])
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  user_id    Int?
+  entity     String
+  entity_id  Int?
+  action     String
+  summary    String
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+  @@index([entity, entity_id])
+  @@index([createdAt])
+  @@index([user_id])
+}
+
+// Configurable kanban stages shown on the production board (Konfigurasi >
+// Tahapan Produksi). "urutan" controls left-to-right column order.
+model ProductionStage {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  urutan    Int
+  createdAt DateTime @default(now())
+
+  @@map("production_stages")
+  @@index([urutan])
+}
+
+model PoMember {
+  id        Int      @id @default(autoincrement())
+  po_id     Int
+  user_id   Int
+  createdAt DateTime @default(now())
+
+  po   PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("po_members")
+  @@unique([po_id, user_id])
+  @@index([po_id])
+}
+
+model PoChecklistItem {
+  id        Int      @id @default(autoincrement())
+  po_id     Int
+  text      String
+  is_done   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  po PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
+
+  @@map("po_checklist_items")
+  @@index([po_id])
+}
+
+model AppSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  label       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("app_settings")
+}
+
+// A customer-submitted order from the public "Buat Form Pemesanan" link
+// (/order-form, no login required). Reviewed/confirmed by admin_produksi
+// from the Order dashboard, and can be printed as an invoice from there.
+model Order {
+  id            Int       @id @default(autoincrement())
+  nomor_order   String    @unique
+  status        String    @default("baru") // "baru" | "diproses" | "selesai" | "dibatalkan"
+  buyer_nama    String
+  buyer_telepon String?
+  buyer_alamat  String?
+  catatan       String?
+  subtotal      Decimal   @default(0)
+  dp_amount     Decimal   @default(0) // nominal DP/pembayaran yang sudah diterima
+  metode_pembayaran String? // Tunai | Transfer Bank | QRIS | E-Wallet | Lainnya (bebas teks)
+  deadline      DateTime? // target tanggal order harus selesai
+  cancel_reason String?   // alasan pembatalan, diisi saat status diubah ke "dibatalkan" lewat tombol Cancel
+  cancelled_by  Int?
+  cancelled_at  DateTime?
+  confirmed_by  Int?
+  confirmed_at  DateTime?
+  // Nama PO usulan yang diisi admin/sales saat input order manual (tombol
+  // "Input Order"). Dipakai sebagai nama_po saat order ini divalidasi oleh
+  // admin_produksi dan diteruskan menjadi PurchaseOrder sungguhan di board
+  // produksi (lihat po_id di bawah).
+  nama_po       String?
+  // Diisi otomatis setelah admin_produksi memvalidasi order ini menjadi PO
+  // produksi lewat POST /api/order/[id]/validate-po. Selama masih null,
+  // order berstatus "baru" dianggap sebagai permintaan input PO yang masih
+  // menunggu validasi.
+  po_id         Int?
+  createdAt     DateTime  @default(now())
+
+  confirmer User?          @relation(fields: [confirmed_by], references: [id], onDelete: SetNull)
+  canceller User?          @relation("OrderCancelledBy", fields: [cancelled_by], references: [id], onDelete: SetNull)
+  linkedPo  PurchaseOrder? @relation("OrderValidatedIntoPo", fields: [po_id], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+
+  @@map("orders")
+  @@index([status])
+  @@index([createdAt])
+  @@index([deadline])
+  @@index([po_id])
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  order_id     Int
+  artikel_id   Int?
+  sku_produk_id Int?
+  sku_produk_sku String?
+  nama_artikel String
+  harga_satuan Decimal
+  qty          Int
+  subtotal     Decimal
+  createdAt    DateTime @default(now())
+
+  order      Order       @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  artikel    Artikel?    @relation(fields: [artikel_id], references: [id], onDelete: SetNull)
+  skuProduct SkuProduct? @relation(fields: [sku_produk_id], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+  @@index([order_id])
+  @@index([artikel_id])
+  @@index([sku_produk_id])
+}
+
+// A payroll run for a given date range. Aggregates upah borongan from
+// setoran_jahit within [start_date, end_date] plus any manual adjustments,
+// and can be marked "paid" once processed (locks date/label edits).
+model PayrollPeriod {
+  id         Int       @id @default(autoincrement())
+  label      String
+  start_date DateTime
+  end_date   DateTime
+  status     String    @default("draft") // "draft" | "paid"
+  created_by Int
+  paid_by    Int?
+  paid_at    DateTime?
+  createdAt  DateTime  @default(now())
+
+  creator     User               @relation("PayrollPeriodCreator", fields: [created_by], references: [id])
+  payer       User?              @relation("PayrollPeriodPayer", fields: [paid_by], references: [id])
+  adjustments PayrollAdjustment[]
+
+  @@map("payroll_periods")
+  @@index([start_date])
+}
+
+// Manual bonus/potongan applied to one operator within one payroll period,
+// on top of the automatically-calculated upah borongan.
+model PayrollAdjustment {
+  id          Int      @id @default(autoincrement())
+  period_id   Int
+  operator_id Int
+  type        String // "bonus" | "potongan"
+  label       String
+  amount      Decimal
+  created_by  Int
+  createdAt   DateTime @default(now())
+
+  period   PayrollPeriod @relation(fields: [period_id], references: [id], onDelete: Cascade)
+  operator Operator      @relation(fields: [operator_id], references: [id])
+  creator  User          @relation(fields: [created_by], references: [id])
+
+  @@map("payroll_adjustments")
+  @@index([period_id])
+  @@index([operator_id])
 }

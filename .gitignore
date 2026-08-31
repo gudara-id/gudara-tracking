@@ -26,3 +26,7 @@ Thumbs.db
 
 # Logs
 npm-debug.log*
+# Database dumps/backups with real credentials - never commit
+backup_sebelum_cleanup.sql
+cleanup_db.sql
+00_create_user_jahit.sql

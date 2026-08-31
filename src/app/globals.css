@@ -4,4 +4,105 @@
 
 html, body {
   height: 100%;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background-color: theme("colors.thread.200");
+  color: theme("colors.denim.900");
+}
+
+/* Native-app tap feedback: a quick, subtle press-down used on buttons,
+   nav tabs and tappable rows so touch input feels acknowledged instantly. */
+.tap-shrink {
+  touch-action: manipulation;
+  transition: transform 100ms ease, opacity 100ms ease;
+}
+.tap-shrink:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+/* Safe-area helpers for phones with notches / home indicators. */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Thin, warm-toned scrollbars for the kanban board and long panels. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.slate.300") transparent;
+}
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: theme("colors.slate.300");
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Stitch motif: a dashed "seam" rule used as GUDARA's signature divider,
+   evoking a line of sewing stitches. Use on section breaks / card headers. */
+.stitch-rule {
+  border: none;
+  border-top: 2px dashed theme("colors.thread.300");
+  opacity: 0.9;
+}
+.stitch-divider {
+  position: relative;
+}
+.stitch-divider::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border-bottom: 2px dashed theme("colors.thread.300");
+}
+
+/* Scoped print mode: only the element with #print-area (and its children)
+   is shown when printing, everything else on the page is hidden. Used for
+   printing operator barcode ID cards. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  /* `visibility: hidden` keeps hidden elements in normal flow (they still
+     take up layout height), which was pushing #print-area onto a 2nd page
+     with a blank 1st page in front of it. Collapse everything at the body
+     level that isn't an ancestor of #print-area so it no longer eats page
+     space. Modern print-capable browsers (Chrome/Edge/Safari) support :has(). */
+  body > *:not(:has(#print-area)) {
+    display: none !important;
+  }
+  #print-area {
+    position: absolute;
+    inset: 0;
+    /* Leave room at the top so cards don't collide with the browser's own
+       print header (date/title), which prints flush at the very top of
+       the page when "Headers and footers" is enabled in the print dialog. */
+    top: 0.5in;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
 }

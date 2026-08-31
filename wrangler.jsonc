@@ -1,17 +1,25 @@
 {
-  "name": "gudara-tracker",
-  "main": ".open-next/worker.js",
-  "compatibility_date": "2026-08-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "gudara-db",
-      "database_id": "REPLACE-WITH-YOUR-D1-DATABASE-ID"
-    }
-  ]
+	"name": "gudara-tracker",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-08-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "gudara-db",
+			"database_id": "d6043e41-039c-4548-aeef-3bc261989ec8"
+		},
+		{
+			"binding": "gudara_db",
+			"database_name": "gudara-db",
+			"database_id": "d6043e41-039c-4548-aeef-3bc261989ec8",
+			"remote": true
+		}
+	]
 }
