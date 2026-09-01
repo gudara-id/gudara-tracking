@@ -1317,6 +1317,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
                 <Label>Role</Label>
                 <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus-visible:outline-none focus-visible:border-denim-400 focus-visible:ring-2 focus-visible:ring-denim-200">
                   <option value="admin_jahit">Admin Jahit</option>
+                  <option value="admin_cutting">Admin Cutting</option>
                   <option value="operator_jahit">Operator Jahit</option>
                   <option value="admin_produksi">Admin Produksi</option>
                   <option value="operator_produksi">Operator Produksi</option>

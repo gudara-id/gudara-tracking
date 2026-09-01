@@ -30,7 +30,7 @@ export async function GET() {
     const { results: pos } = await db.prepare(`${PO_SELECT} ORDER BY po."createdAt" DESC`).all<PoRow>();
     const poRows = pos ?? [];
 
-    const { articlesByPo, attachmentsByPo, logsByPo, membersByPo, checklistByPo, addOnsByPo } = await loadPoRelations(
+    const { articlesByPo, attachmentsByPo, logsByPo, membersByPo, checklistByPo, addOnsByPo, qtyJahitByPo, qtyCuttingByPo } = await loadPoRelations(
       db,
       poRows.map((po) => po.id)
     );
@@ -44,6 +44,8 @@ export async function GET() {
           members: membersByPo.get(po.id),
           checklistItems: checklistByPo.get(po.id),
           addOns: addOnsByPo.get(po.id),
+          qtyJahit: qtyJahitByPo.get(po.id),
+          qtyCutting: qtyCuttingByPo.get(po.id),
         })
       )
     );

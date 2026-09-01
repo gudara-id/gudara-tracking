@@ -4,7 +4,8 @@
 
 INSERT INTO "users" ("username", "password_hash", "role", "nama_lengkap") VALUES
   ('produksi', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_produksi', 'Admin Produksi'),
-  ('jahit', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_jahit', 'Admin Jahit');
+  ('jahit', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_jahit', 'Admin Jahit'),
+  ('cutting', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_cutting', 'Admin Cutting');
 
 INSERT INTO "operators" ("barcode_operator", "nama_operator", "status") VALUES
   ('OP-0001', 'Siti Rahayu', 'aktif'),

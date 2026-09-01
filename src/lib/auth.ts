@@ -8,7 +8,7 @@ const encodedKey = new TextEncoder().encode(secretKey);
 export type SessionPayload = {
   userId: number;
   username: string;
-  role: "admin_produksi" | "admin_jahit" | "operator_jahit" | "operator_produksi" | "kurir" | "sales";
+  role: "admin_produksi" | "admin_jahit" | "admin_cutting" | "operator_jahit" | "operator_produksi" | "kurir" | "sales";
   nama_lengkap: string;
 };
 

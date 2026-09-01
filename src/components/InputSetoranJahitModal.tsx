@@ -39,6 +39,7 @@ type PoData = {
   barcode_po: string;
   target_qty: number | null;
   qty_terselesaikan: number;
+  qty_terselesaikan_cutting?: number;
 };
 type PoListItem = { id: number; nomor_po: string; nama_po: string; nama_artikel: string; status: string };
 
@@ -481,6 +482,19 @@ export default function InputSetoranJahitModal({
                     Sudah terselesaikan:{" "}
                     <span className="font-medium text-slate-700">{po.qty_terselesaikan} pcs</span> (PO ini tidak
                     punya target QTY)
+                  </p>
+                )}
+                {typeof po.qty_terselesaikan_cutting === "number" && (
+                  <p
+                    className={`mt-2 border-t border-dashed border-emerald-200 pt-1.5 text-[11px] ${
+                      po.qty_terselesaikan_cutting === po.qty_terselesaikan ? "text-emerald-700" : "text-amber-700"
+                    }`}
+                  >
+                    Cutting untuk PO ini:{" "}
+                    <span className="font-semibold">{po.qty_terselesaikan_cutting} pcs</span>
+                    {po.qty_terselesaikan_cutting === po.qty_terselesaikan
+                      ? " — sudah sama dengan total jahit"
+                      : ` — beda ${Math.abs(po.qty_terselesaikan_cutting - po.qty_terselesaikan)} pcs dari total jahit (${po.qty_terselesaikan} pcs)`}
                   </p>
                 )}
               </div>

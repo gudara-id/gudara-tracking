@@ -28,6 +28,7 @@ This creates:
 
 - Admin Produksi login: `produksi` / `gudara123`
 - Admin Jahit login: `jahit` / `gudara123`
+- Admin Cutting login: `cutting` / `gudara123`
 - Sample operator barcodes: `OP-0001`, `OP-0002`, `OP-0003`
 - Sample PO barcode: `GDR-PO-2026080400001`
 
@@ -49,6 +50,8 @@ Login as `jahit` to open Dashboard Setoran Jahit. Use `Input Setoran Jahit` for 
 4. The setoran is saved, the modal stays open, and focus returns to operator scan for the next entry.
 
 Most USB/Bluetooth barcode scanners act like keyboards and send Enter after each scan. The modal also handles Tab suffixes for the operator and PO scan fields.
+
+Login as `cutting` to open Dashboard Cutting. Alurnya sama persis (scan operator → scan PO → QTY), disimpan terpisah dari setoran jahit supaya QTY cutting bisa dibandingkan dengan QTY jahit untuk PO yang sama — perbandingan ini muncul otomatis di modal input, di Dashboard Cutting, dan di detail PO pada Board Produksi.
 
 ## 4. Export
 

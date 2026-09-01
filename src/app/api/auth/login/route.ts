@@ -6,6 +6,7 @@ import { createSession } from '@/lib/auth'
 function redirectForRole(role: string) {
   if (role === 'admin_produksi') return '/produksi';
   if (role === 'admin_jahit') return '/jahit';
+  if (role === 'admin_cutting') return '/cutting';
   if (role === 'operator_jahit') return '/operator-jahit';
   if (role === 'operator_produksi') return '/operator-produksi';
   if (role === 'kurir') return '/kurir';
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     await createSession({
       userId: user.id,
       username: user.username,
-      role: user.role as "admin_produksi" | "admin_jahit" | "operator_jahit" | "operator_produksi" | "kurir" | "sales",
+      role: user.role as "admin_produksi" | "admin_jahit" | "admin_cutting" | "operator_jahit" | "operator_produksi" | "kurir" | "sales",
       nama_lengkap: user.nama_lengkap,
     });
 

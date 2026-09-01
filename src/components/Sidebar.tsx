@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, ChevronLeft, ChevronRight, KeyRound, LayoutDashboard, LogOut, PackageCheck, Scissors, Settings, ShoppingCart, Truck, UserCog, Wallet, X } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, KeyRound, LayoutDashboard, LogOut, PackageCheck, Ruler, Scissors, Settings, ShoppingCart, Truck, UserCog, Wallet, X } from "lucide-react";
 import { initialsOf, ROLE_LABELS, type Profile } from "@/lib/profile";
 import EditProfileModal from "./EditProfileModal";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -20,6 +20,7 @@ const NAV_BY_ROLE: Record<Profile["role"], NavItem[]> = {
     { href: "/jahit", label: "Dashboard Jahit", icon: Scissors },
     { href: "/payroll", label: "Payroll", icon: Wallet },
   ],
+  admin_cutting: [{ href: "/cutting", label: "Dashboard Cutting", icon: Ruler }],
   operator_jahit: [
     { href: "/operator-jahit", label: "Dashboard Saya", icon: Scissors },
     { href: "/gaji-saya", label: "Gaji Saya", icon: Wallet },

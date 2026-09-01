@@ -28,6 +28,17 @@ async function main() {
     },
   });
 
+  const adminCutting = await prisma.user.upsert({
+    where: { username: "cutting" },
+    update: {},
+    create: {
+      username: "cutting",
+      password_hash: passwordHash,
+      role: "admin_cutting",
+      nama_lengkap: "Admin Cutting",
+    },
+  });
+
   const operators = [
     { barcode_operator: "OP-0001", nama_operator: "Siti Rahayu" },
     { barcode_operator: "OP-0002", nama_operator: "Dewi Lestari" },
@@ -59,9 +70,11 @@ async function main() {
   console.log("Seed selesai.");
   console.log("Login Admin Produksi -> username: produksi | password: gudara123");
   console.log("Login Admin Jahit    -> username: jahit    | password: gudara123");
+  console.log("Login Admin Cutting  -> username: cutting  | password: gudara123");
   console.log("Contoh barcode operator: OP-0001, OP-0002, OP-0003");
   console.log("Contoh barcode PO: GDR-PO-2026080400001");
   void adminJahit;
+  void adminCutting;
 }
 
 main()

@@ -90,6 +90,14 @@ Cukup ulangi:
 npm run deploy
 ```
 
+Kalau perubahan kodenya menambah tabel baru (lihat file `migration_add_*.sql`
+di root project, misalnya `migration_add_cutting.sql`), jalankan dulu migrasi
+tambahan itu ke database yang sudah berjalan sebelum/sesudah deploy:
+
+```powershell
+npx wrangler d1 execute gudara-db --remote --file=./migration_add_cutting.sql
+```
+
 ## Uji coba lokal dulu (opsional, sebelum deploy ke internet)
 
 ```powershell

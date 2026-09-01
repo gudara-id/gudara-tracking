@@ -15,7 +15,7 @@ datasource db {
 // SQLite has no native enum type in Prisma, so role/status fields are
 // stored as String and constrained at the app layer (src/lib/validators.ts).
 // If you switch to PostgreSQL, you can convert these fields to real enums.
-// UserRole:       "admin_produksi" | "admin_jahit"
+// UserRole:       "admin_produksi" | "admin_jahit" | "admin_cutting"
 // OperatorStatus: "aktif" | "non-aktif"
 // POStatus:       "berjalan" | "selesai"
 
@@ -31,6 +31,7 @@ model User {
 
   purchaseOrders   PurchaseOrder[]      @relation("POCreatedBy")
   setoranEntries   SetoranJahit[]       @relation("SetoranAdminJahit")
+  setoranCuttingEntries SetoranCutting[] @relation("SetoranAdminCutting")
   activityLogs     ActivityLog[]
   resetTokens      PasswordResetToken[]
   poMemberships    PoMember[]
@@ -106,6 +107,7 @@ model Operator {
   createdAt        DateTime @default(now())
 
   setoranEntries SetoranJahit[]
+  setoranCuttingEntries SetoranCutting[]
   payrollAdjustments PayrollAdjustment[]
 
   @@map("operators")
@@ -128,6 +130,7 @@ model PurchaseOrder {
 
   creator        User           @relation("POCreatedBy", fields: [created_by], references: [id])
   setoranEntries SetoranJahit[]
+  setoranCuttingEntries SetoranCutting[]
   articles       PurchaseOrderArticle[]
   attachments    PurchaseOrderAttachment[]
   members        PoMember[]
@@ -229,6 +232,35 @@ model SetoranJahit {
   adminJahit User          @relation("SetoranAdminJahit", fields: [admin_jahit_id], references: [id])
 
   @@map("setoran_jahit")
+  @@index([tanggal_setoran])
+  @@index([operator_id])
+  @@index([po_id])
+}
+
+// Setoran hasil potong kain, alurnya sama persis dengan SetoranJahit (scan
+// operator -> scan PO -> isi QTY) supaya QTY yang dipotong bisa dibandingkan
+// langsung dengan QTY yang sudah dijahit untuk PO yang sama (lihat
+// qty_terselesaikan_jahit/qty_terselesaikan_cutting di /api/po/lookup dan
+// qty_jahit/qty_cutting di GET /api/po). Tidak ada harga_satuan/total_upah
+// di sini karena cutting saat ini tidak dihitung borongan per pcs seperti
+// jahit — kalau nanti perlu payroll cutting juga, tambahkan kolom senada
+// dengan SetoranJahit.harga_satuan_snapshot/total_upah.
+model SetoranCutting {
+  id                    Int      @id @default(autoincrement())
+  tanggal_setoran       DateTime @default(now())
+  operator_id           Int
+  po_id                 Int
+  qty_disetor           Int
+  qty_reject            Int      @default(0)
+  catatan_reject        String?
+  admin_cutting_id      Int
+  foto_url              String?
+
+  operator     Operator      @relation(fields: [operator_id], references: [id])
+  po           PurchaseOrder @relation(fields: [po_id], references: [id])
+  adminCutting User          @relation("SetoranAdminCutting", fields: [admin_cutting_id], references: [id])
+
+  @@map("setoran_cutting")
   @@index([tanggal_setoran])
   @@index([operator_id])
   @@index([po_id])

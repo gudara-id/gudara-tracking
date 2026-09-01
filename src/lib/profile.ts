@@ -2,7 +2,7 @@ export type Profile = {
   id: number;
   username: string;
   email: string | null;
-  role: "admin_produksi" | "admin_jahit" | "operator_jahit" | "operator_produksi" | "kurir" | "sales";
+  role: "admin_produksi" | "admin_jahit" | "admin_cutting" | "operator_jahit" | "operator_produksi" | "kurir" | "sales";
   nama_lengkap: string;
   avatar_url: string | null;
   createdAt: string;
@@ -11,6 +11,7 @@ export type Profile = {
 export const ROLE_LABELS: Record<Profile["role"], string> = {
   admin_produksi: "Admin Produksi",
   admin_jahit: "Admin Jahit",
+  admin_cutting: "Admin Cutting",
   operator_jahit: "Operator Jahit",
   operator_produksi: "Operator Produksi",
   kurir: "Kurir",

@@ -96,16 +96,19 @@ export async function loadPoRelations(db: D1Database, poIds: number[]) {
       membersByPo: new Map<number, PoMemberRow[]>(),
       checklistByPo: new Map<number, PoChecklistItemRow[]>(),
       addOnsByPo: new Map<number, PoAddOnRow[]>(),
+      qtyJahitByPo: new Map<number, number>(),
+      qtyCuttingByPo: new Map<number, number>(),
     };
   }
 
   const { placeholders, values } = inClause(poIds);
 
   // Promise.allSettled (not all): if the newer po_members/po_checklist_items/
-  // purchase_order_addons tables haven't been migrated yet on this
-  // environment, we still want the core PO list (articles/attachments/logs)
-  // to load instead of the whole request failing with a 500.
-  const [articlesResult, attachmentsResult, logsResult, membersResult, checklistResult, addOnsResult] = await Promise.allSettled([
+  // purchase_order_addons/setoran_cutting tables haven't been migrated yet on
+  // this environment, we still want the core PO list (articles/attachments/
+  // logs) to load instead of the whole request failing with a 500.
+  const [articlesResult, attachmentsResult, logsResult, membersResult, checklistResult, addOnsResult, qtyJahitResult, qtyCuttingResult] =
+    await Promise.allSettled([
     db
       .prepare(`SELECT * FROM purchase_order_articles WHERE po_id IN (${placeholders}) ORDER BY id ASC`)
       .bind(...values)
@@ -136,6 +139,17 @@ export async function loadPoRelations(db: D1Database, poIds: number[]) {
       .prepare(`SELECT * FROM purchase_order_addons WHERE po_id IN (${placeholders}) ORDER BY id ASC`)
       .bind(...values)
       .all<PoAddOnRow>(),
+    db
+      .prepare(`SELECT po_id, COALESCE(SUM(qty_disetor), 0) AS total FROM setoran_jahit WHERE po_id IN (${placeholders}) GROUP BY po_id`)
+      .bind(...values)
+      .all<{ po_id: number; total: number }>(),
+    // setoran_cutting is a newer table — Promise.allSettled means environments
+    // that haven't run migration_add_cutting.sql yet just get an empty map
+    // here instead of a broken PO list.
+    db
+      .prepare(`SELECT po_id, COALESCE(SUM(qty_disetor), 0) AS total FROM setoran_cutting WHERE po_id IN (${placeholders}) GROUP BY po_id`)
+      .bind(...values)
+      .all<{ po_id: number; total: number }>(),
   ]);
 
   const settled = <T,>(result: PromiseSettledResult<{ results?: T[] }>, label: string): T[] => {
@@ -187,7 +201,17 @@ export async function loadPoRelations(db: D1Database, poIds: number[]) {
     addOnsByPo.set(row.po_id, list);
   }
 
-  return { articlesByPo, attachmentsByPo, logsByPo, membersByPo, checklistByPo, addOnsByPo };
+  const qtyJahitByPo = new Map<number, number>();
+  for (const row of settled(qtyJahitResult, "setoran_jahit")) {
+    qtyJahitByPo.set(row.po_id, row.total);
+  }
+
+  const qtyCuttingByPo = new Map<number, number>();
+  for (const row of settled(qtyCuttingResult, "setoran_cutting")) {
+    qtyCuttingByPo.set(row.po_id, row.total);
+  }
+
+  return { articlesByPo, attachmentsByPo, logsByPo, membersByPo, checklistByPo, addOnsByPo, qtyJahitByPo, qtyCuttingByPo };
 }
 
 /** Shapes a raw PO row (+ preloaded relations) into the nested JSON shape the frontend expects. */
@@ -200,6 +224,8 @@ export function serializePo(
     members?: PoMemberRow[];
     checklistItems?: PoChecklistItemRow[];
     addOns?: PoAddOnRow[];
+    qtyJahit?: number;
+    qtyCutting?: number;
   }
 ) {
   const { creator_nama_lengkap, ...rest } = po;
@@ -246,5 +272,9 @@ export function serializePo(
       ...addon,
       harga_addon: decimalToNumber(addon.harga_addon),
     })),
+    // Total QTY jahit & cutting yang sudah masuk untuk PO ini — dipakai di
+    // papan produksi untuk menandai kalau keduanya belum sama persis.
+    qty_jahit: relations.qtyJahit ?? 0,
+    qty_cutting: relations.qtyCutting ?? 0,
   };
 }

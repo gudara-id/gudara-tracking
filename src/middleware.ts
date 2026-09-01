@@ -9,6 +9,8 @@ function homeForRole(role: SessionPayload["role"]) {
       return "/produksi";
     case "admin_jahit":
       return "/jahit";
+    case "admin_cutting":
+      return "/cutting";
     case "operator_jahit":
       return "/operator-jahit";
     case "operator_produksi":
@@ -42,6 +44,7 @@ export async function middleware(req: NextRequest) {
     ["/produksi", "admin_produksi"],
     ["/analitik", "admin_produksi"],
     ["/jahit", "admin_jahit"],
+    ["/cutting", "admin_cutting"],
     ["/operator-jahit", "operator_jahit"],
     ["/gaji-saya", "operator_jahit"],
     ["/operator-produksi", "operator_produksi"],
@@ -77,6 +80,7 @@ export const config = {
   matcher: [
     "/produksi/:path*",
     "/jahit/:path*",
+    "/cutting/:path*",
     "/operator-jahit/:path*",
     "/operator-produksi/:path*",
     "/kurir/:path*",
@@ -88,6 +92,7 @@ export const config = {
     "/api/po/:path*",
     "/api/operator/:path*",
     "/api/setoran/:path*",
+    "/api/setoran-cutting/:path*",
     "/api/artikel/:path*",
     "/api/sku-produk/:path*",
     "/api/users/:path*",

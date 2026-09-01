@@ -207,6 +207,28 @@ CREATE INDEX IF NOT EXISTS "po_checklist_items_po_id_idx" ON "po_checklist_items
 
 ALTER TABLE "setoran_jahit" ADD COLUMN "foto_url" TEXT;
 
+-- Added: Input Cutting — same flow as Setoran Jahit (scan operator -> scan
+-- PO -> QTY), stored separately so cutting QTY can be compared against
+-- jahit QTY for the same PO. See migration_add_cutting.sql for the
+-- standalone incremental version run against already-deployed D1 DBs.
+CREATE TABLE IF NOT EXISTS "setoran_cutting" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "tanggal_setoran" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "operator_id" INTEGER NOT NULL,
+  "po_id" INTEGER NOT NULL,
+  "qty_disetor" INTEGER NOT NULL,
+  "qty_reject" INTEGER NOT NULL DEFAULT 0,
+  "catatan_reject" TEXT,
+  "admin_cutting_id" INTEGER NOT NULL,
+  "foto_url" TEXT,
+  CONSTRAINT "setoran_cutting_operator_id_fkey" FOREIGN KEY ("operator_id") REFERENCES "operators" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "setoran_cutting_po_id_fkey" FOREIGN KEY ("po_id") REFERENCES "purchase_orders" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "setoran_cutting_admin_cutting_id_fkey" FOREIGN KEY ("admin_cutting_id") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "setoran_cutting_tanggal_setoran_idx" ON "setoran_cutting"("tanggal_setoran");
+CREATE INDEX IF NOT EXISTS "setoran_cutting_operator_id_idx" ON "setoran_cutting"("operator_id");
+CREATE INDEX IF NOT EXISTS "setoran_cutting_po_id_idx" ON "setoran_cutting"("po_id");
+
 -- Added 2026-08-14: Order section — public order form (shareable link, no
 -- login) + invoice, for customers to submit orders directly instead of
 -- manually via chat/WA. See prisma/migrations/20260814180000_add_orders.

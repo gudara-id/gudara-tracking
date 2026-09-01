@@ -36,6 +36,8 @@ type PO = {
   description: string | null;
   createdAt: string;
   creator: { nama_lengkap: string };
+  qty_jahit?: number;
+  qty_cutting?: number;
   articles: { id: number; nama_artikel: string; harga_satuan: number; qty: number | null }[];
   attachments: { id: number; file_name: string; file_url: string; is_cover: boolean; createdAt: string }[];
   activityLogs: { id: number; action: string; summary: string; createdAt: string; user: { nama_lengkap: string; username: string } | null }[];
@@ -1190,6 +1192,33 @@ export default function ProduksiDashboardClient({ namaLengkap, role }: { namaLen
                       </div>
                     </div>
                   </div>
+
+                  {((selectedPo.qty_jahit ?? 0) > 0 || (selectedPo.qty_cutting ?? 0) > 0) && (
+                    <div className="mt-4 rounded-md border border-slate-200 p-4">
+                      <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <BarChart3 className="h-4 w-4" />
+                        Progress Cutting vs Jahit
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <span className="text-slate-600">
+                          Cutting: <span className="font-semibold text-slate-900">{selectedPo.qty_cutting ?? 0} pcs</span>
+                        </span>
+                        <span className="text-slate-600">
+                          Jahit: <span className="font-semibold text-slate-900">{selectedPo.qty_jahit ?? 0} pcs</span>
+                        </span>
+                        {(selectedPo.qty_cutting ?? 0) === (selectedPo.qty_jahit ?? 0) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                            <CheckSquare className="h-3.5 w-3.5" /> QTY sudah sama persis
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            Beda {Math.abs((selectedPo.qty_cutting ?? 0) - (selectedPo.qty_jahit ?? 0))} pcs, belum sama
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-8">
                     <div className="mb-3 flex items-center justify-between">

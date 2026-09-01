@@ -46,11 +46,21 @@ export async function GET(req: NextRequest) {
     .prepare(`SELECT COALESCE(SUM(qty_disetor), 0) AS total FROM setoran_jahit WHERE po_id = ?1`)
     .bind(po.id)
     .first<{ total: number }>();
-  const qty_terselesaikan = setoranRow?.total ?? 0;
+  const qty_terselesaikan_jahit = setoranRow?.total ?? 0;
+
+  const cuttingRow = await db
+    .prepare(`SELECT COALESCE(SUM(qty_disetor), 0) AS total FROM setoran_cutting WHERE po_id = ?1`)
+    .bind(po.id)
+    .first<{ total: number }>();
+  const qty_terselesaikan_cutting = cuttingRow?.total ?? 0;
 
   return NextResponse.json({
     ...po,
     harga_satuan: decimalToNumber(po.harga_satuan),
-    qty_terselesaikan,
+    // qty_terselesaikan dipertahankan (= qty jahit) untuk kompatibilitas
+    // mundur dengan kode lama yang masih memakai nama field ini.
+    qty_terselesaikan: qty_terselesaikan_jahit,
+    qty_terselesaikan_jahit,
+    qty_terselesaikan_cutting,
   });
 }
