@@ -11,7 +11,7 @@ type ArtikelRow = { id: number; kode_artikel: string | null; nama_artikel: strin
 // order form at /order-form (the "Buat Form Pemesanan" equivalent). No OTP
 // verification here — unlike the reference flow, GUDARA doesn't have an
 // SMS/WhatsApp gateway configured, so orders land as status "baru" for
-// admin_produksi to confirm by contacting the buyer directly. See the note
+// admin_operasional to confirm by contacting the buyer directly. See the note
 // in /order about wiring up a real OTP step later if that's needed.
 export async function POST(req: NextRequest) {
   const body = await req.json();

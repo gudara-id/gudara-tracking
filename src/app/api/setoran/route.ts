@@ -125,7 +125,7 @@ type PoForSetoran = {
 // POST - the scanner submits { operator_id, po_id, qty_disetor }
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_jahit") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

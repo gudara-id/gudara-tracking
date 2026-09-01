@@ -23,7 +23,7 @@ type TotalsRow = {
 };
 
 function canAccessPayroll(role: string) {
-  return role === "admin_produksi" || role === "admin_jahit";
+  return role === "admin_operasional";
 }
 
 // Operator jahit boleh MELIHAT (read-only) rekap gaji resmi mereka sendiri,

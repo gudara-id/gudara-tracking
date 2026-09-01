@@ -54,7 +54,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
   const [compressingFoto, setCompressingFoto] = useState(false);
   const [applyFotoToAllSizes, setApplyFotoToAllSizes] = useState(false);
   const [addOnForm, setAddOnForm] = useState({ nama: "", harga: "" });
-  const [userForm, setUserForm] = useState({ username: "", password: "", role: "admin_jahit", nama_lengkap: "", email: "" });
+  const [userForm, setUserForm] = useState({ username: "", password: "", role: "admin_operasional", nama_lengkap: "", email: "" });
   const [operatorNama, setOperatorNama] = useState("");
   const [stageNama, setStageNama] = useState("");
   const [addingStage, setAddingStage] = useState(false);
@@ -76,7 +76,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
   const fetchConfig = useCallback(async () => {
     // Role "sales" cuma melihat tab SKU Produk Order, jadi tidak perlu
     // fetch data untuk tab-tab lain yang disembunyikan (dan yang API-nya
-    // memang dibatasi untuk admin_produksi).
+    // memang dibatasi untuk admin_operasional).
     const skuRes = await fetch("/api/sku-produk");
     if (skuRes.ok) {
       setSkuProducts(await skuRes.json());
@@ -512,7 +512,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
       return;
     }
     toast.success("User ditambahkan");
-    setUserForm({ username: "", password: "", role: "admin_jahit", nama_lengkap: "", email: "" });
+    setUserForm({ username: "", password: "", role: "admin_operasional", nama_lengkap: "", email: "" });
     fetchConfig();
   }
 
@@ -1316,9 +1316,8 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
               <div>
                 <Label>Role</Label>
                 <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm focus-visible:outline-none focus-visible:border-denim-400 focus-visible:ring-2 focus-visible:ring-denim-200">
-                  <option value="admin_jahit">Admin Jahit</option>
+                  <option value="admin_operasional">Admin Operasional</option>
                   <option value="operator_jahit">Operator Jahit</option>
-                  <option value="admin_produksi">Admin Produksi</option>
                   <option value="operator_produksi">Operator Produksi</option>
                   <option value="kurir">Kurir</option>
                   <option value="sales">Sales</option>
@@ -1616,7 +1615,7 @@ export default function KonfigurasiClient({ namaLengkap, role }: { namaLengkap: 
   );
 }
 
-/** Lets admin_produksi set a new password for a locked-out user directly —
+/** Lets admin_operasional set a new password for a locked-out user directly —
  * a workaround for when the forgot-password email webhook isn't configured
  * or isn't reaching the user. The new password must be shared with the
  * user out of band (in person, chat, etc.), not emailed automatically. */

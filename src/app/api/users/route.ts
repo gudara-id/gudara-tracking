@@ -19,7 +19,7 @@ const PUBLIC_FIELDS = `id, username, email, role, nama_lengkap, avatar_url, "cre
 
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -66,10 +66,10 @@ export async function POST(req: NextRequest) {
 
 /** Admin-driven password reset, for when a user is locked out and the
  * forgot-password email flow (RESET_EMAIL_WEBHOOK_URL) isn't set up or
- * isn't reaching the user. Only admin_produksi can do this. */
+ * isn't reaching the user. Only admin_operasional can do this. */
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -105,7 +105,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

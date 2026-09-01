@@ -6,25 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   const passwordHash = await bcrypt.hash("gudara123", 10);
 
-  const adminProduksi = await prisma.user.upsert({
-    where: { username: "produksi" },
+  const adminOperasional = await prisma.user.upsert({
+    where: { username: "operasional" },
     update: {},
     create: {
-      username: "produksi",
+      username: "operasional",
       password_hash: passwordHash,
-      role: "admin_produksi",
-      nama_lengkap: "Admin Produksi",
-    },
-  });
-
-  const adminJahit = await prisma.user.upsert({
-    where: { username: "jahit" },
-    update: {},
-    create: {
-      username: "jahit",
-      password_hash: passwordHash,
-      role: "admin_jahit",
-      nama_lengkap: "Admin Jahit",
+      role: "admin_operasional",
+      nama_lengkap: "Admin Operasional",
     },
   });
 
@@ -52,16 +41,14 @@ async function main() {
       harga_satuan: 8500,
       target_qty: 300,
       status: "berjalan",
-      created_by: adminProduksi.id,
+      created_by: adminOperasional.id,
     },
   });
 
   console.log("Seed selesai.");
-  console.log("Login Admin Produksi -> username: produksi | password: gudara123");
-  console.log("Login Admin Jahit    -> username: jahit    | password: gudara123");
+  console.log("Login Admin Operasional -> username: operasional | password: gudara123");
   console.log("Contoh barcode operator: OP-0001, OP-0002, OP-0003");
   console.log("Contoh barcode PO: GDR-PO-2026080400001");
-  void adminJahit;
 }
 
 main()

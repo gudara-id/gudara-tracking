@@ -109,7 +109,7 @@ export default function ProfileMenu({ fallbackName }: { fallbackName: string }) 
             >
               <KeyRound className="h-4 w-4" /> Ubah Password
             </button>
-            {profile?.role === "admin_produksi" && (
+            {profile?.role === "admin_operasional" && (
               <button
                 type="button"
                 onClick={() => {

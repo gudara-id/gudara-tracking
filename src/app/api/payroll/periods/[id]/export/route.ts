@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
 function canAccessPayroll(role: string) {
-  return role === "admin_produksi" || role === "admin_jahit";
+  return role === "admin_operasional";
 }
 
 type PeriodRow = { id: number; label: string; start_date: string; end_date: string; status: string };

@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { recordActivity } from "@/lib/activity";
 
 function canAccessPayroll(role: string) {
-  return role === "admin_produksi" || role === "admin_jahit";
+  return role === "admin_operasional";
 }
 
 // POST /api/payroll/adjustments — tambah bonus/potongan/kasbon untuk satu

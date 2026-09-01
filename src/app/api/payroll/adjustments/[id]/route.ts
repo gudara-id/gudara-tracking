@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { recordActivity } from "@/lib/activity";
 
 function canAccessPayroll(role: string) {
-  return role === "admin_produksi" || role === "admin_jahit";
+  return role === "admin_operasional";
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

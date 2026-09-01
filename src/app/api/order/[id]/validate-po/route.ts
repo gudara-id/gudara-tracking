@@ -25,7 +25,7 @@ type OrderItemRow = {
   qty: number;
 };
 
-// Ini adalah langkah "validasi" yang diminta admin_produksi sebelum sebuah
+// Ini adalah langkah "validasi" yang diminta admin_operasional sebelum sebuah
 // Order (baik dari form publik maupun dari "Input Order" manual) diteruskan
 // jadi permintaan produksi sungguhan. Order manual selalu mendarat dengan
 // status "baru" — endpoint ini yang mengubahnya jadi PurchaseOrder di board
@@ -33,7 +33,7 @@ type OrderItemRow = {
 // po_id supaya tidak divalidasi dua kali.
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Hanya admin produksi yang bisa memvalidasi order menjadi PO" }, { status: 401 });
   }
 

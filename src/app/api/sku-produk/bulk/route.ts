@@ -27,7 +27,7 @@ function parseIds(body: { ids?: unknown }) {
 // beberapa SKU yang dicentang, tanpa perlu edit satu-satu.
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || !["admin_operasional", "sales"].includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "sales"].includes(session.role)) {
+  if (!session || !["admin_operasional", "sales"].includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

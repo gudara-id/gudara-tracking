@@ -5,7 +5,7 @@ import AnalitikDashboardClient from "./analitik-dashboard-client";
 export default async function AnalitikPage() {
   const session = await getSession();
   if (!session) redirect("/");
-  if (session.role !== "admin_produksi") redirect(session.role === "operator_jahit" ? "/operator-jahit" : "/jahit");
+  if (session.role !== "admin_operasional") redirect(session.role === "operator_jahit" ? "/operator-jahit" : "/produksi");
 
   return <AnalitikDashboardClient namaLengkap={session.nama_lengkap} />;
 }

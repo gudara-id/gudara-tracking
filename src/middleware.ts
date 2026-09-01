@@ -5,10 +5,8 @@ const PUBLIC_PATHS = ["/", "/reset-password", "/api/auth/login", "/api/auth/forg
 
 function homeForRole(role: SessionPayload["role"]) {
   switch (role) {
-    case "admin_produksi":
+    case "admin_operasional":
       return "/produksi";
-    case "admin_jahit":
-      return "/jahit";
     case "operator_jahit":
       return "/operator-jahit";
     case "operator_produksi":
@@ -39,9 +37,8 @@ export async function middleware(req: NextRequest) {
 
   // Halaman-halaman berikut masing-masing hanya untuk satu role spesifik.
   const singleRolePages: [string, SessionPayload["role"]][] = [
-    ["/produksi", "admin_produksi"],
-    ["/analitik", "admin_produksi"],
-    ["/jahit", "admin_jahit"],
+    ["/produksi", "admin_operasional"],
+    ["/analitik", "admin_operasional"],
     ["/operator-jahit", "operator_jahit"],
     ["/gaji-saya", "operator_jahit"],
     ["/operator-produksi", "operator_produksi"],
@@ -54,8 +51,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // Payroll: hanya role yang memegang data setoran/upah operator jahit
-  // (admin_produksi, admin_jahit). Role lain tidak relevan/tidak boleh akses.
-  if (pathname.startsWith("/payroll") && !["admin_produksi", "admin_jahit"].includes(session.role)) {
+  // (admin_operasional). Role lain tidak relevan/tidak boleh akses.
+  if (pathname.startsWith("/payroll") && session.role !== "admin_operasional") {
     return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
   }
 
@@ -64,9 +61,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
   }
 
-  // Konfigurasi: admin_produksi (semua tab kecuali SKU Produk Order) + sales
+  // Konfigurasi: admin_operasional (semua tab kecuali SKU Produk Order) + sales
   // (hanya tab SKU Produk Order, difilter di halaman/komponennya).
-  if (pathname.startsWith("/konfigurasi") && !["admin_produksi", "sales"].includes(session.role)) {
+  if (pathname.startsWith("/konfigurasi") && !["admin_operasional", "sales"].includes(session.role)) {
     return NextResponse.redirect(new URL(homeForRole(session.role), req.url));
   }
 

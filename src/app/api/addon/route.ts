@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

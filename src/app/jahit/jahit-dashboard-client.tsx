@@ -42,9 +42,12 @@ function getWeekRange(reference: Date, weeksAgo = 0) {
 export default function JahitDashboardClient({
   namaLengkap,
   readOnly = false,
+  embedded = false,
 }: {
   namaLengkap: string;
   readOnly?: boolean;
+  /** When rendered as a tab inside a combined dashboard, skip the own Sidebar/page chrome. */
+  embedded?: boolean;
 }) {
   const [entries, setEntries] = useState<SetoranEntry[]>([]);
   const [operators, setOperators] = useState<OperatorOption[]>([]);
@@ -176,9 +179,9 @@ export default function JahitDashboardClient({
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      <Sidebar fallbackName={namaLengkap} />
-      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 pb-24 pt-4 md:px-4 md:pb-8 md:py-8">
+    <div className={embedded ? "flex flex-col" : "flex min-h-screen flex-col md:flex-row"}>
+      {!embedded && <Sidebar fallbackName={namaLengkap} />}
+      <main className={embedded ? "mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-4" : "mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 pb-24 pt-4 md:px-4 md:pb-8 md:py-8"}>
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="font-display text-xl font-bold text-denim-900">Dashboard Setoran Jahit</h1>

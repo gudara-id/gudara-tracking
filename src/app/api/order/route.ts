@@ -53,10 +53,10 @@ export async function GET() {
 }
 
 // Input Order manual: dipakai oleh tombol "Input Order" di dashboard Order
-// (admin_produksi / sales mengetik langsung pesanan customer, misalnya dari
+// (admin_operasional / sales mengetik langsung pesanan customer, misalnya dari
 // WA/telepon, tanpa lewat form pemesanan publik). Order yang dibuat lewat
 // endpoint ini selalu mendarat dengan status "baru" — SAMA seperti order
-// dari form publik — jadi tetap harus divalidasi oleh admin_produksi
+// dari form publik — jadi tetap harus divalidasi oleh admin_operasional
 // (lihat POST /api/order/[id]/validate-po) sebelum diteruskan jadi PO
 // sungguhan di board produksi. `nama_po` di sini hanya usulan nama PO yang
 // dipakai saat validasi nanti.

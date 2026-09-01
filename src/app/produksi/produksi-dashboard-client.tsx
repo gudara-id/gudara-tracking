@@ -85,8 +85,17 @@ function getDueState(dueDate: string | null, thresholdDays = 2) {
   return { label: format(due, "dd MMM"), className: "bg-slate-100 text-slate-600 ring-slate-200", urgent: false };
 }
 
-export default function ProduksiDashboardClient({ namaLengkap, role }: { namaLengkap: string; role: string }) {
-  const isAdmin = role === "admin_produksi";
+export default function ProduksiDashboardClient({
+  namaLengkap,
+  role,
+  embedded = false,
+}: {
+  namaLengkap: string;
+  role: string;
+  /** When rendered as a tab inside a combined dashboard, skip the own Sidebar/page chrome. */
+  embedded?: boolean;
+}) {
+  const isAdmin = role === "admin_operasional";
   const [pos, setPos] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -186,7 +195,7 @@ export default function ProduksiDashboardClient({ namaLengkap, role }: { namaLen
   }, [fetchPos, fetchStages]);
 
   // Hitung berapa order (dari /order, termasuk hasil "Input Order" manual)
-  // yang belum divalidasi jadi PO produksi, supaya admin_produksi lihat ada
+  // yang belum divalidasi jadi PO produksi, supaya admin_operasional lihat ada
   // permintaan menunggu langsung dari Board Produksi.
   useEffect(() => {
     if (!isAdmin) return;
@@ -498,10 +507,10 @@ export default function ProduksiDashboardClient({ namaLengkap, role }: { namaLen
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      <Sidebar fallbackName={namaLengkap} />
-      <main className="min-h-screen min-w-0 flex-1 bg-slate-100 pb-24 text-slate-900 md:pb-0">
-      <div className="sticky top-14 z-20 border-b border-dashed border-thread-300 bg-slate-100/95 px-4 py-3 backdrop-blur md:top-0">
+    <div className={embedded ? "flex flex-col" : "flex min-h-screen flex-col md:flex-row"}>
+      {!embedded && <Sidebar fallbackName={namaLengkap} />}
+      <main className={embedded ? "min-w-0 flex-1 bg-slate-100 text-slate-900" : "min-h-screen min-w-0 flex-1 bg-slate-100 pb-24 text-slate-900 md:pb-0"}>
+      <div className={embedded ? "sticky top-0 z-20 border-b border-dashed border-thread-300 bg-slate-100/95 px-4 py-3 backdrop-blur" : "sticky top-14 z-20 border-b border-dashed border-thread-300 bg-slate-100/95 px-4 py-3 backdrop-blur md:top-0"}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="font-display text-sm font-bold uppercase tracking-wide text-denim-800">Gudara Production Board</h1>

@@ -55,7 +55,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -203,10 +203,10 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "operator_produksi", "kurir"].includes(session.role)) {
+  if (!session || !["admin_operasional", "operator_produksi", "kurir"].includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const isAdmin = session.role === "admin_produksi";
+  const isAdmin = session.role === "admin_operasional";
   const isKurir = session.role === "kurir";
 
   const body = await req.json();
@@ -217,7 +217,7 @@ export async function PATCH(req: NextRequest) {
 
   // Operator Produksi & Kurir hanya boleh memindahkan tahapan PO (dan untuk
   // Kurir, melampirkan foto bukti pengiriman) — tidak boleh mengubah
-  // label/due date/deskripsi PO seperti admin_produksi.
+  // label/due date/deskripsi PO seperti admin_operasional.
   if (!isAdmin) {
     if (label !== undefined || due_date !== undefined || description !== undefined) {
       return NextResponse.json({ error: "Anda hanya bisa mengubah tahapan PO ini" }, { status: 403 });
@@ -379,13 +379,13 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-/** Menghapus PO secara permanen. Hanya admin_produksi, dan hanya untuk PO
+/** Menghapus PO secara permanen. Hanya admin_operasional, dan hanya untuk PO
  * yang belum punya data setoran/produksi terkait (dijaga oleh FK RESTRICT
  * di tabel setoran_jahit) — kalau sudah ada, sarankan Batalkan saja supaya
  * histori produksi tidak hilang. */
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

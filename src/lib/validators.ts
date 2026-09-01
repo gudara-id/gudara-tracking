@@ -2,7 +2,7 @@
 // (SQLite has no native enum support in Prisma) but are logically
 // fixed unions. Kept dependency-free; swap for Zod if you prefer.
 
-export const USER_ROLES = ["admin_produksi", "admin_jahit", "operator_jahit", "operator_produksi", "kurir", "sales"] as const;
+export const USER_ROLES = ["admin_operasional", "operator_jahit", "operator_produksi", "kurir", "sales"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const OPERATOR_STATUSES = ["aktif", "non-aktif"] as const;

@@ -38,7 +38,7 @@ type AdjustmentRow = {
 };
 
 function canAccessPayroll(role: string) {
-  return role === "admin_produksi" || role === "admin_jahit";
+  return role === "admin_operasional";
 }
 
 function canViewPayroll(role: string) {

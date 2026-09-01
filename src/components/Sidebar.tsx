@@ -10,15 +10,11 @@ import ChangePasswordModal from "./ChangePasswordModal";
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
 const NAV_BY_ROLE: Record<Profile["role"], NavItem[]> = {
-  admin_produksi: [
-    { href: "/produksi", label: "Board Produksi", icon: LayoutDashboard },
+  admin_operasional: [
+    { href: "/produksi", label: "Produksi", icon: LayoutDashboard },
     { href: "/analitik", label: "Analitik", icon: BarChart3 },
     { href: "/payroll", label: "Payroll", icon: Wallet },
     { href: "/konfigurasi", label: "Konfigurasi", icon: Settings },
-  ],
-  admin_jahit: [
-    { href: "/jahit", label: "Dashboard Jahit", icon: Scissors },
-    { href: "/payroll", label: "Payroll", icon: Wallet },
   ],
   operator_jahit: [
     { href: "/operator-jahit", label: "Dashboard Saya", icon: Scissors },

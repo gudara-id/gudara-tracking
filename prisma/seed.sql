@@ -1,10 +1,9 @@
 -- GUDARA Production & Sewing Tracker - demo seed data for D1
 -- Apply with: wrangler d1 execute gudara-db --remote --file=./prisma/seed.sql
--- Password for both demo logins below is: gudara123
+-- Password for the demo login below is: gudara123
 
 INSERT INTO "users" ("username", "password_hash", "role", "nama_lengkap") VALUES
-  ('produksi', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_produksi', 'Admin Produksi'),
-  ('jahit', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_jahit', 'Admin Jahit');
+  ('operasional', '$2a$10$WHRtxohKYCc6trHjgMAj2uPpjzTEfr4lSjSLmuHN0XFrRKgAHciCW', 'admin_operasional', 'Admin Operasional');
 
 INSERT INTO "operators" ("barcode_operator", "nama_operator", "status") VALUES
   ('OP-0001', 'Siti Rahayu', 'aktif'),
@@ -20,5 +19,5 @@ VALUES (
   8500,
   300,
   'berjalan',
-  (SELECT "id" FROM "users" WHERE "username" = 'produksi')
+  (SELECT "id" FROM "users" WHERE "username" = 'operasional')
 );

@@ -6,7 +6,7 @@ type ChecklistRow = { id: number; po_id: number; text: string; is_done: number; 
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["admin_produksi", "operator_produksi"].includes(session.role)) {
+  if (!session || !["admin_operasional", "operator_produksi"].includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const isAdmin = session.role === "admin_produksi";
+  const isAdmin = session.role === "admin_operasional";
 
   const { id, is_done, text } = await req.json();
   const itemId = Number(id);
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

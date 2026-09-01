@@ -56,7 +56,7 @@ async function loadStages(db: D1Database) {
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "admin_produksi") {
+  if (!session || session.role !== "admin_operasional") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

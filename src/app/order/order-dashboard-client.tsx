@@ -71,7 +71,7 @@ const STATUS_BADGE: Record<OrderStatus, string> = {
 };
 
 export default function OrderDashboardClient({ namaLengkap, role }: { namaLengkap: string; role: string }) {
-  const isAdminProduksi = role === "admin_produksi";
+  const isAdminProduksi = role === "admin_operasional";
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "semua">("semua");
@@ -213,7 +213,7 @@ export default function OrderDashboardClient({ namaLengkap, role }: { namaLengka
     }
   }
 
-  // Validasi order jadi PO produksi sungguhan (hanya admin_produksi). Order
+  // Validasi order jadi PO produksi sungguhan (hanya admin_operasional). Order
   // yang diinput lewat "Input Order" (atau masuk lewat form publik) mendarat
   // sebagai permintaan menunggu validasi ini sebelum tampil di board produksi.
   async function validateIntoPo() {

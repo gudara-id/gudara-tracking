@@ -103,7 +103,7 @@ export default function EditProfileModal({
           <div>
             <Label>Username</Label>
             <Input value={profile.username} disabled className="bg-slate-50 text-slate-500" />
-            <p className="mt-1 text-xs text-slate-400">Username dipakai untuk login dan tidak dapat diubah sendiri. Hubungi Admin Produksi jika perlu diganti.</p>
+            <p className="mt-1 text-xs text-slate-400">Username dipakai untuk login dan tidak dapat diubah sendiri. Hubungi Admin Operasional jika perlu diganti.</p>
           </div>
 
           <DialogFooter>
