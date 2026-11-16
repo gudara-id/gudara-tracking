@@ -82,7 +82,6 @@ export const config = {
     "/gaji-saya/:path*",
     "/analitik/:path*",
     "/order/:path*",
-    "/api/po/:path*",
     "/api/operator/:path*",
     "/api/setoran/:path*",
     "/api/artikel/:path*",

@@ -158,7 +158,11 @@ export default function ProduksiDashboardClient({
   const fetchPos = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/po?ts=${Date.now()}`, { cache: "no-store" });
+      const res = await fetch(`/api/po?ts=${Date.now()}`, {
+        cache: "no-store",
+        credentials: "include",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         toast.error((data && data.error) || `Gagal memuat data PO (${res.status})`);
