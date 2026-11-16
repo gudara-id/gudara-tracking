@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AlertTriangle, ArrowLeftCircle, ArrowRightCircle, Barcode, BarChart3, Ban, CalendarDays, CheckSquare, Circle, Link, ListChecks, MoreHorizontal, Package, Paperclip, Plus, Printer, RotateCcw, Search, Settings2, Tag, Trash2, UserPlus, Users } from "lucide-react";
@@ -18,6 +18,7 @@ import PoBarcodeLabelsDialog from "@/components/PoBarcodeLabelsDialog";
 import OperatorBarcode from "@/components/OperatorBarcode";
 import Sidebar from "@/components/Sidebar";
 import { KANBAN_PO_STATUSES, CANCELLED_PO_STATUS } from "@/lib/validators";
+import { compressPhotoToDataUrl } from "@/lib/image-compress";
 
 type ChecklistItem = { id: number; text: string; is_done: boolean; createdAt: string };
 type Member = { id: number; user_id: number; nama_lengkap: string; username: string };
@@ -319,6 +320,26 @@ export default function ProduksiDashboardClient({
     } finally {
       setUpdatingId(null);
       setDraggedId(null);
+    }
+  }
+
+  async function addPhotoAttachment(po: PO, file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Pilih file gambar (JPG, PNG, atau WebP)");
+      return;
+    }
+    try {
+      const dataUrl = await compressPhotoToDataUrl(file, 1280, 0.78);
+      await updatePoMeta(po, {
+        attachment: {
+          file_name: file.name,
+          file_url: dataUrl,
+          is_cover: !po.attachments?.some((item) => item.is_cover),
+        },
+      });
+      toast.success("Gambar berhasil ditambahkan");
+    } catch {
+      toast.error("Gambar gagal diproses");
     }
   }
 
@@ -734,6 +755,20 @@ export default function ProduksiDashboardClient({
                         stageBorder(stage)
                       } ${dueState?.urgent ? "ring-thread-300" : "ring-slate-200"}`}
                     >
+                      {po.attachments?.find((attachment) => attachment.is_cover)?.file_url && (
+                        <div className="relative h-28 w-full overflow-hidden bg-slate-100">
+                          <img
+                            src={po.attachments.find((attachment) => attachment.is_cover)?.file_url}
+                            alt={`Gambar ${po.nama_po}`}
+                            className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                          />
+                          {po.attachments.length > 1 && (
+                            <span className="absolute bottom-2 right-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white">
+                              +{po.attachments.length - 1} gambar
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5">
                         <span className="font-mono text-[10px] text-slate-400">{po.nomor_po}</span>
                         <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${stageAccent(stage)}`}>
@@ -825,7 +860,7 @@ export default function ProduksiDashboardClient({
       >
         <DialogContent className="max-w-5xl overflow-x-hidden p-0">
           {selectedPo && (
-            <div className="grid max-h-[92vh] overflow-x-hidden overflow-y-auto lg:max-h-[86vh] lg:grid-cols-[1.35fr_0.85fr] lg:overflow-hidden">
+            <div className="grid min-h-0 max-h-[92vh] overflow-x-hidden overflow-y-auto lg:max-h-[86vh] lg:grid-cols-[1.35fr_0.85fr] lg:overflow-hidden">
               <div className="min-w-0 lg:overflow-y-auto">
                 <div className={`flex h-28 items-center justify-between gap-3 border-b-4 px-6 ${stageBorder(normalizeStage(selectedPo.status))} bg-denim-900`}>
                   <span className="min-w-0 truncate font-mono text-xs text-denim-300">{selectedPo.barcode_po}</span>
@@ -920,7 +955,7 @@ export default function ProduksiDashboardClient({
                             className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-50"
                             onClick={() => {
                               setAddMenuOpen(false);
-                              document.getElementById("attachment_url")?.focus();
+                              document.getElementById("attachment_file")?.click();
                             }}
                           >
                             <Paperclip className="h-4 w-4 text-slate-500" /> Attachment
@@ -982,9 +1017,20 @@ export default function ProduksiDashboardClient({
                       )}
                     </div>
 
-                    <Button type="button" variant="outline" className="shrink-0" onClick={() => document.getElementById("attachment_url")?.focus()}>
-                      <Paperclip className="mr-1 h-4 w-4" /> Attachment
-                    </Button>
+                    <label className="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium hover:bg-slate-50">
+                      <Paperclip className="mr-1 h-4 w-4" /> Tambah Gambar
+                      <input
+                        id="attachment_file"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          const file = event.target.files?.[0];
+                          if (file) addPhotoAttachment(selectedPo, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
                     <Button type="button" variant="outline" className="shrink-0" onClick={() => setBarcodeOpen(true)}>
                       <Printer className="mr-1 h-4 w-4" /> Label PO
                     </Button>
@@ -1225,35 +1271,21 @@ export default function ProduksiDashboardClient({
                         Attachments
                       </div>
                     </div>
-                    <div className="mb-3 grid gap-2 sm:grid-cols-[1fr_1.5fr_auto]">
-                      <input
-                        value={attachmentName}
-                        onChange={(event) => setAttachmentName(event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm"
-                        placeholder="Nama file"
-                      />
-                      <input
-                        id="attachment_url"
-                        value={attachmentUrl}
-                        onChange={(event) => setAttachmentUrl(event.target.value)}
-                        className="h-10 rounded-md border border-slate-200 px-3 text-sm"
-                        placeholder="URL / path attachment"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          if (!attachmentName || !attachmentUrl) {
-                            toast.error("Nama dan URL attachment wajib diisi");
-                            return;
-                          }
-                          updatePoMeta(selectedPo, { attachment: { file_name: attachmentName, file_url: attachmentUrl, is_cover: !selectedPo.attachments?.length } });
-                          setAttachmentName("");
-                          setAttachmentUrl("");
-                        }}
-                      >
-                        Add
-                      </Button>
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      <label className="inline-flex h-10 cursor-pointer items-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium hover:bg-slate-50">
+                        <Paperclip className="mr-1 h-4 w-4" /> Pilih Gambar
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            const file = event.target.files?.[0];
+                            if (file) addPhotoAttachment(selectedPo, file);
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
+                      <span className="self-center text-xs text-slate-400">JPG, PNG, WebP · otomatis dikompres</span>
                     </div>
                     <div className="space-y-2">
                       {selectedPo.attachments?.length ? (

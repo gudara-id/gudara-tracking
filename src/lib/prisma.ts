@@ -26,7 +26,7 @@ function getClient(): PrismaClient {
   try {
     const { env } = getCloudflareContext();
     const adapter = new PrismaD1(env.DB);
-    cachedClient = new PrismaClient({ adapter });
+    cachedClient = new PrismaClient({ adapter: adapter as any });
   } catch {
     cachedClient = new PrismaClient();
   }
