@@ -6,6 +6,9 @@ import { generatePoIdentifiers, LEGACY_PO_STATUSES, CANCELLED_PO_STATUS } from "
 import { recordActivity } from "@/lib/activity";
 import { PO_SELECT, loadPoRelations, serializePo, type PoRow, type PoArticleRow, type PoAddOnRow } from "./_shared";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /** A status is valid if it's a legacy value ("berjalan"/"selesai"), the special
  * cancelled status, or matches a configured production stage. */
 async function isValidStatus(db: D1Database, status: string) {
