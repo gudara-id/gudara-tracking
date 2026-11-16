@@ -4,6 +4,7 @@ initOpenNextCloudflareForDev();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
   // Wajib untuk Prisma di Cloudflare Workers (via OpenNext) — memastikan
   // @prisma/client & .prisma/client dibundle dengan benar untuk runtime workerd
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
