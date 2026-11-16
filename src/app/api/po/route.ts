@@ -45,7 +45,8 @@ export async function GET() {
           checklistItems: checklistByPo.get(po.id),
           addOns: addOnsByPo.get(po.id),
         })
-      )
+      ),
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
     );
   } catch (err: unknown) {
     console.error("GET /api/po failed", err);
