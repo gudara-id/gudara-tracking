@@ -744,6 +744,7 @@ export default function ProduksiDashboardClient({
               ) : groupedPos[stage]?.length ? (
                 groupedPos[stage].map((po) => {
                   const dueState = getDueState(po.due_date, dueSoonDays);
+                  const coverAttachment = po.attachments?.find((attachment) => attachment.is_cover) ?? po.attachments?.[0];
                   return (
                     <button
                       key={po.id}
@@ -755,10 +756,10 @@ export default function ProduksiDashboardClient({
                         stageBorder(stage)
                       } ${dueState?.urgent ? "ring-thread-300" : "ring-slate-200"}`}
                     >
-                      {po.attachments?.find((attachment) => attachment.is_cover)?.file_url && (
+                      {coverAttachment?.file_url && (
                         <div className="relative h-28 w-full overflow-hidden bg-slate-100">
                           <img
-                            src={po.attachments.find((attachment) => attachment.is_cover)?.file_url}
+                            src={coverAttachment.file_url}
                             alt={`Gambar ${po.nama_po}`}
                             className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                           />
