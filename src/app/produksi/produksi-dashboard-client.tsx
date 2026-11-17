@@ -761,10 +761,27 @@ export default function ProduksiDashboardClient({
                       } ${dueState?.urgent ? "ring-thread-300" : "ring-slate-200"}`}
                     >
                       {coverAttachment?.file_url && (
-                        <div className="relative h-28 w-full overflow-hidden bg-slate-100">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Buka preview gambar ${po.nama_po}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            window.open(coverAttachment.file_url, "_blank", "noopener,noreferrer");
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              window.open(coverAttachment.file_url, "_blank", "noopener,noreferrer");
+                            }
+                          }}
+                          className="relative h-28 w-full cursor-zoom-in overflow-hidden bg-slate-100"
+                        >
                           <img
                             src={coverAttachment.file_url}
-                            alt={`Gambar ${po.nama_po}`}
+                            alt={`Gambar ${po.nama_po} — klik untuk preview`}
                             className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                           />
                           {po.attachments.length > 1 && (
