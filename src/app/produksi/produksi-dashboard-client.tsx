@@ -121,6 +121,7 @@ export default function ProduksiDashboardClient({
   const [cancelledOpen, setCancelledOpen] = useState(false);
   const [cancelProcessingId, setCancelProcessingId] = useState<number | null>(null);
   const [pendingOrderCount, setPendingOrderCount] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
   const labelInputRef = useRef<HTMLInputElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
@@ -768,13 +769,13 @@ export default function ProduksiDashboardClient({
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            window.open(coverAttachment.file_url, "_blank", "noopener,noreferrer");
+                            setPreviewUrl(coverAttachment.file_url);
                           }}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
                               event.stopPropagation();
-                              window.open(coverAttachment.file_url, "_blank", "noopener,noreferrer");
+                              setPreviewUrl(coverAttachment.file_url);
                             }
                           }}
                           className="relative h-28 w-full cursor-zoom-in overflow-hidden bg-slate-100"
@@ -905,24 +906,32 @@ export default function ProduksiDashboardClient({
                   </DialogHeader>
 
                   {selectedPo.attachments?.length ? (
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <div className="mt-4 flex flex-col gap-3">
                       {selectedPo.attachments.map((attachment) => (
-                        <a
+                        <div
                           key={attachment.id}
-                          href={attachment.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`group relative block overflow-hidden rounded-lg border bg-slate-100 ${attachment.is_cover ? "sm:col-span-2" : ""}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setPreviewUrl(attachment.file_url)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setPreviewUrl(attachment.file_url)}
+                          className={`group relative block cursor-zoom-in overflow-hidden rounded-lg border bg-slate-100 ${
+                            attachment.is_cover ? "order-first" : ""
+                          }`}
                         >
                           <img
                             src={attachment.file_url}
                             alt={attachment.file_name}
-                            className={`${attachment.is_cover ? "h-48 sm:h-64" : "h-32"} w-full object-cover transition group-hover:scale-[1.02]`}
+                            className={`${attachment.is_cover ? "h-64 sm:h-80" : "h-32"} w-full object-cover transition group-hover:scale-[1.02]`}
                           />
-                          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-6 text-xs text-white">
-                            {attachment.is_cover ? "Cover · " : ""}{attachment.file_name}
-                          </span>
-                        </a>
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8">
+                            <p className="text-[10px] font-medium text-white/90">
+                              {attachment.is_cover ? "COVER PO" : "ATTACHMENT"}
+                            </p>
+                            <p className="truncate text-xs font-semibold text-white">
+                              {attachment.file_name}
+                            </p>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : null}
@@ -1379,6 +1388,27 @@ export default function ProduksiDashboardClient({
         </DialogContent>
       </Dialog>
       <PoBarcodeLabelsDialog open={barcodeOpen} onOpenChange={setBarcodeOpen} pos={selectedPo ? [selectedPo] : filteredPos} />
+
+      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
+        <DialogContent className="max-w-4xl border-none bg-transparent p-0 shadow-none ring-0">
+          <div className="relative flex min-h-[300px] w-full items-center justify-center">
+            {previewUrl && (
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-h-[90vh] w-auto max-w-full rounded-lg object-contain shadow-2xl ring-1 ring-white/20"
+              />
+            )}
+            <button
+              onClick={() => setPreviewUrl(null)}
+              className="absolute -top-4 -right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
+              aria-label="Tutup preview"
+            >
+              <Plus className="h-6 w-6 rotate-45" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelledOpen} onOpenChange={setCancelledOpen}>
         <DialogContent className="max-w-2xl">
