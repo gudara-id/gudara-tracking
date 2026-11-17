@@ -904,6 +904,29 @@ export default function ProduksiDashboardClient({
                     <DialogDescription className="break-words">{selectedPo.nomor_po}</DialogDescription>
                   </DialogHeader>
 
+                  {selectedPo.attachments?.length ? (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {selectedPo.attachments.map((attachment) => (
+                        <a
+                          key={attachment.id}
+                          href={attachment.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`group relative block overflow-hidden rounded-lg border bg-slate-100 ${attachment.is_cover ? "sm:col-span-2" : ""}`}
+                        >
+                          <img
+                            src={attachment.file_url}
+                            alt={attachment.file_name}
+                            className={`${attachment.is_cover ? "h-48 sm:h-64" : "h-32"} w-full object-cover transition group-hover:scale-[1.02]`}
+                          />
+                          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-6 text-xs text-white">
+                            {attachment.is_cover ? "Cover · " : ""}{attachment.file_name}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+
                   {selectedPo.members?.length ? (
                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
                       {selectedPo.members.map((member) => (
